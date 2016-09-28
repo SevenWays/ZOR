@@ -1,0 +1,18 @@
+<?php
+array(
+    'console' => array(
+        'router' => array(
+            'routes' => array(
+                'user-reset-password' => array(
+                    'options' => array(
+                        'route'    => 'user',
+                        'defaults' => array(
+                            'controller' => 'Application\Controller\Index',
+                            'action'     => 'index'
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
