@@ -35,6 +35,7 @@
  *
  * @link http://seven-ways.net
  * @version 0.0.1 from 27.04.2016
+ * @author Sergej Hoffmann
  */
 
 namespace ZOR\Db\Sql\Ddl;
@@ -71,15 +72,25 @@ class CreateNewTable {
     protected $table_name = null;
     protected $field_name = NULL;
     protected $primaryKeyField = null;
+    protected $dbAdapter = null;
 
-    public function createColumnFromString($string) {
-        $array = explode(',', $string);
-        $this->table_name = array_shift($array);
+    public function __construct($dbadapter) {
+        $this->dbAdapter = $dbadapter;
+    }
+
+    public function createTableFromString($tableName, $columnsStr) {
+
+        $this->table_name = $tableName;
+        $array = explode(',', $columnsStr);
+
         if (is_array($array)) {
 
             foreach ($array as $value) {
                 $result = explode(':', $value);
 
+                if (!key_exists(1, $result)) {
+                    $result[1] = null;
+                }
 
                 foreach ($result as $key => $value) {
 
@@ -136,23 +147,35 @@ class CreateNewTable {
         return $this->table_name;
     }
 
+    function getDbAdapter() {
+        return $this->dbAdapter;
+    }
+
     public function createTable() {
-        $sett = array(
-            'driver' => 'Pdo',
-            'dsn' => 'mysql:dbname=zor;host=localhost',
-            'username' => 'root',
-            'password' => 'emily2007',
-            'driver_options' => array(
-                \Pdo::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''
-        ));
-        $adapter = new Adapter($sett);
+
+        $adapter = $this->getDbAdapter();
 
         if (empty($this->table_name) || empty($this->columns)) {
-            throw new \Exception("Table name can't be empty");
+            throw new \Exception("Table name or columns can't be empty");
         }
 
         $tb = new CreateTable($this->table_name);
         if (is_array($this->columns)) {
+
+            if (!key_exists("id", $this->columns)) {
+                $this->createIntegerColumn("id");
+                $this->columns["id"]->setOption('auto increment', true);
+                $this->addConstraint('primarykey', "id", "id");
+                $id = array_pop($this->columns);
+                array_unshift($this->columns, $id);
+            }
+            if (!key_exists("created_at", $this->columns)) {
+                $this->createDateTimeColumn("created_at");
+            }
+            if (!key_exists("updated_at", $this->columns)) {
+                $this->createTimestampColumn("updated_at", false, null, array('on_update'));
+            }
+
             foreach ($this->columns as $column) {
                 $tb->addColumn($column);
             }
@@ -172,7 +195,7 @@ class CreateNewTable {
     public function addConstraint($type, $columns = null, $name = null) {
         switch (strtolower($type)) {
 
-            case 'primerykey':
+            case 'primarykey':
                 $this->constraint[] = new PrimaryKey($columns, $name);
                 $this->setPrimaryKeyColumn($columns);
                 break;
@@ -204,17 +227,17 @@ class CreateNewTable {
     }
 
     protected function setDefault($param) {
-        if ($param != null)
+        if ($param != null) {
             $this->columns[$this->field_name]->setDefault($param);
+        }
     }
 
     protected function createType($type) {
-        preg_match_all('/(\w+)/', $type, $match);
+        preg_match_all('/(\w+)/', $type, $match=array());
 
         $field_type = (isset($match[0][0])) ? ucfirst($match[0][0]) : 'Varchar';
-        $length = (isset($match[0][1])) ? $match[0][1] : null;
+        $length = (isset($match[0][1])) ? $match[0][1] : 255;
         $decimal = (isset($match[0][2])) ? $match[0][2] : null;
-
 
 
         switch ($field_type) {
@@ -237,7 +260,7 @@ class CreateNewTable {
                 $this->createFloatingColumn($this->field_name, $length, $decimal);
                 break;
             case 'Decimal':
-                $this->columens[$this->field_name] = new Decimal($this->field_name, $length, $decimal);
+                $this->createDecimalColumn($this->field_name, $length, $decimal);
                 break;
             case 'Date':
                 $this->createDateColumn($this->field_name);
@@ -255,11 +278,10 @@ class CreateNewTable {
                 $this->createBooleanColumn($this->field_name);
                 break;
             case 'Text':
-                $this->createBooleanColumn($this->field_name);
+                $this->createTextColumn($this->field_name);
                 break;
             default:
-                throw new Exception('Invalide Type of Column');
-                break;
+                throw new \Exception('Invalide Type of Column');
         }
     }
 
