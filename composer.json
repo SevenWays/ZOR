@@ -1,5 +1,5 @@
 {
-    "name": "sevenways/zor",
+    "name": "Sevenways/ZOR",
     "type": "library",
     "description": "Module for Zend Framework 2",
     "keywords": ["Tool","ActiveRecord"],
@@ -19,7 +19,7 @@
     },
     "autoload": {
         "classmap": [
-            "src/"
+            "ZOR/"
         ]
     }
 }
