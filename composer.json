@@ -17,12 +17,9 @@
          "php": ">=5.5",
         "zendframework/zendframework": "~2.5"
     },
-	"bin": [
-        "phpunit"
-    ],
     "autoload": {
         "classmap": [
             "src/"
         ]
-    },
+    }
 }
