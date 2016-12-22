@@ -43,6 +43,7 @@ use Zend\Code\Generator\ClassGenerator;
 use Zend\Code\Generator\MethodGenerator;
 use Zend\Code\Generator\FileGenerator;
 use ZOR\Db\Sql\Ddl\CreateNewTable;
+use Zend\Db\Adapter\Adapter;
 
 class GenerateService extends AbstractService {
 
@@ -147,8 +148,8 @@ class GenerateService extends AbstractService {
         return true;
     }
 
-    public function generateModel($name, $module, $columns) {
-
+    public function generateModel($name, $module, $columns, $dbadapter) {
+        
         $modulPath = $this->getAppRootDir() . '/module/' . ucfirst($module);
         $modelPath = $modulPath . '/src/' . ucfirst($module) . '/Model/' . ucfirst($name) . '.php';
 
@@ -159,8 +160,8 @@ class GenerateService extends AbstractService {
 
         $modelName = ucfirst($name);
         $namespaceName = ucfirst($module) . '\Model';
-
-        $ct = $this->createTable($modelName, $columns);
+        
+        $ct = $this->createTable($modelName, $columns, $dbadapter);
 
         $this->class = $this->generateClass($modelName, $namespaceName);
 
@@ -193,10 +194,11 @@ class GenerateService extends AbstractService {
       order,id:integer{11}:unsigned:notnull::auto_increment:primerykey,uniqid:varchar{255}::null:aaa::uniquekey,amount:float{10.4}::notnull:::,created_at:timestamp::null::on_update::foreignkey{name.referenceTable.referenceColumn.onDeleteRule.onUpdateRule}
      */
 
-    protected function createTable($name, $columns) {
+    protected function createTable($name, $columns,  $dbadapter) {
         try {
-            $ct = new CreateNewTable();
-            $ct->createColumnFromString($name . ',' . $columns);
+       
+            $ct = new CreateNewTable($dbadapter);
+            $ct->createTableFromString($name, $columns);
             $this->setMessage($ct->createTable());
             return $ct;
         } catch (Exception $exc) {
@@ -215,19 +217,6 @@ class GenerateService extends AbstractService {
         $args = func_get_args();
         $query = call_user_func_array('sprintf', $args);
         return $query;
-    }
-
-    public function saveContentIntoFile($content, $path, $mode = 0777) {
-        $dir = dirname($path);
-        if (!file_exists($dir)) {
-            mkdir($dir, $mode, true);
-        }
-
-        if (file_put_contents($path, $content)) {
-            $this->setMessage('The file ' . $path . ' was created', 'info');
-        } else {
-            $this->setMessage('An error has occurred', 'error');
-        }
     }
 
     /**

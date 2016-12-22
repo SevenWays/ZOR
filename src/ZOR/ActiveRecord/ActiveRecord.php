@@ -29,15 +29,19 @@ abstract class ActiveRecord extends RowGateway {
 
     /**
      * Use if contains forange key to many Tables
+     * For example:  array('Person' => array('class'=>'Application\Model\Person'));
      * @var array
      */
     protected $hasMany = array();
 
     /**
      * Use if contains forange key to parent Table
+     * For example: array('Department' => array('class'=>'Application\Model\Department', 'foreign_key_attribute' => 'dep_id', 'foreign_key' => null)
      * @var array
      */
     protected $belongsTo = array();
+    
+    protected $models = array();
 
     /**
      * Contains sql query
@@ -79,7 +83,6 @@ abstract class ActiveRecord extends RowGateway {
      * @var \Zend\Db\Sql\Predicate\Predicate 
      */
     protected $predicate = null;
-    
     protected $agg_funcs = array("SUM", "AVG", "MAX", "MIN");
 
     /**
@@ -134,12 +137,8 @@ abstract class ActiveRecord extends RowGateway {
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function build(array $params) {
-        $params['created_at'] = (!empty($params['created_at'])) ? $params['created_at'] : date(self::DATE_FORMAT);
-        $params['updated_at'] = (!empty($params['updated_at'])) ? $params['updated_at'] : date(self::DATE_FORMAT);
-
         $params = array_merge($this->data, $params);
         $this->populate($params);
-
         return $this;
     }
 
@@ -160,8 +159,8 @@ abstract class ActiveRecord extends RowGateway {
      * Get first row from table
      * @return mix
      */
-    public function first() {
-        $this->getSelect()->order(array($this->primaryKeyColumn[0] => 'ASC'))->limit(1);
+    public function first($limit = 1) {
+        $this->getSelect()->order(array($this->primaryKeyColumn[0] => 'ASC'))->limit($limit);
         return $this->execute();
     }
 
@@ -169,8 +168,8 @@ abstract class ActiveRecord extends RowGateway {
      * Get last row from table
      * @return mix
      */
-    public function last() {
-        $this->getSelect()->order(array($this->primaryKeyColumn[0] => 'DESC'))->limit(1);
+    public function last($limit = 1) {
+        $this->getSelect()->order(array($this->primaryKeyColumn[0] => 'DESC'))->limit($limit);
         return $this->execute();
     }
 
@@ -180,6 +179,15 @@ abstract class ActiveRecord extends RowGateway {
      */
     public function all() {
         return $this->execute();
+    }
+
+    /**
+     * Get count number of rows
+     * @param int $count
+     * @return array
+     */
+    function take($limit) {
+        return $this->first($limit);
     }
 
     /**
@@ -465,8 +473,7 @@ abstract class ActiveRecord extends RowGateway {
     public function find_by_attribute($name, $argument) {
         $att_name = ($name != 'pk') ? $name : $this->primaryKeyColumn[0];
         $this->equalTo($att_name, $argument);
-        $this->execute();
-        return $this;
+        return $this->execute();
     }
 
     /**
@@ -512,23 +519,25 @@ abstract class ActiveRecord extends RowGateway {
 
     protected function createStatement() {
         if (!empty($this->belongsTo)) {
-            foreach ($this->belongsTo as $key => $value) {
-                if (!empty($value['key'])) {
-                    $this->getSelect()->where(array($value['attribut'] => $value['key']));
+            foreach ($this->belongsTo as $value) {
+                if (!empty($value['foreign_key'])) {
+                    $this->getSelect()->where(array($value['foreign_key_attribute'] => $value['foreign_key']));
                 }
             }
         }
 
         $result = $this->executeStatement();
-
-        $this->affectedRows = $result->getAffectedRows();
+        $this->affectedRows = $result->count();
+        if ($this->affectedRows == 0) {
+            return null;
+        }
         $this->executed = true;
 
         // make sure data and original data are in sync after save
         return $this->result($result);
     }
 
-    public function add_func($func_name, $attr, $as = null) {
+    public function apply_func($func_name, $attr, $as = null) {
         $as_attr = (is_null($as)) ? $func_name : $as;
         $sql = $this->getSelect()->columns(array($as_attr => new \Zend\Db\Sql\Expression($func_name . '(' . $attr . ')')));
         $result = $this->executeStatement();
@@ -548,7 +557,7 @@ abstract class ActiveRecord extends RowGateway {
             }
             return 1;
         } else {
-            return $this->add_func('COUNT', $attr);
+            return $this->apply_func('COUNT', $attr);
         }
     }
 
@@ -596,7 +605,7 @@ abstract class ActiveRecord extends RowGateway {
             $class = get_called_class();
             foreach ($result as $value) {
                 $a = new $class($this->adapter);
-                $a->populate($value);
+                $a->populate($value, true);
                 $array[] = $a;
                 unset($a); // cleanup           
             }
@@ -617,20 +626,26 @@ abstract class ActiveRecord extends RowGateway {
     public function save() {
         if (!empty($this->belongsTo)) {
             foreach ($this->belongsTo as $key => $value) {
-                if (!empty($value['key'])) {
-                    $this->{$value['attribut']} = $value['key'];
+                if (!empty($value['foreign_key'])) {
+                    $this->{$value['foreign_key_attribute']} = $value['foreign_key'];
                 }
             }
         }
+
+        $this->data['created_at'] = (!empty($this->data['created_at'])) ? $this->data['created_at'] : date(self::DATE_FORMAT);
+        $this->data['updated_at'] = date(self::DATE_FORMAT);
+
+
         $this->_newrecord = (parent::save() > 0) ? false : true;
         return $this;
     }
 
     /**
-     * Return whether Record is new, and not saved
+     * Return true if the record is new, and not saved
      * @return bool
      */
     public function isNewRecord() {
+        $this->_newrecord = ($this->rowExistsInDatabase()) ? false : true;
         return $this->_newrecord;
     }
 
@@ -661,8 +676,16 @@ abstract class ActiveRecord extends RowGateway {
             return $this->find_or_create_by_attribute($result[2], $arguments[1][0], $_);
         }
 
+        if (preg_match('/(^add_)(.*)/', $func, $result)) {
+            if (!empty($this->hasMany && key_exists($result[2], $this->hasMany))) {
+                    return $this->append_model($result[2], $arguments);
+            } else {
+                throw new \Exception("Relationship not exist to $result[2]");    
+            }
+        }
+
         if (in_array($func, $this->agg_funcs)) {
-            return $this->add_func($func, $arguments[0]);
+            return $this->apply_func($func, $arguments[0]);
         }
 
         if (!empty($this->hasMany)) {
@@ -670,9 +693,22 @@ abstract class ActiveRecord extends RowGateway {
                 return $this->create_many($func);
             }
         }
-        /*  if (key_exists($func, $this->belongsTo)) {
-          // return $this->create_many($func);
-          } */
+        if (!empty($this->belongsTo)) {
+            if (key_exists($func, $this->belongsTo)) {
+                return $this->getBelong($func);
+            }
+        }
+    }
+
+    protected function append_model($model_name, $model) {
+        $this->models[$model_name][] = $model;
+        
+        var_dump($this->models);
+    }
+
+    protected function getBelong($belongTo) {
+        $class = new $this->belongsTo[$belongTo]['class']($this->getDbAdapter());
+        return $class->find($this->{$this->belongsTo[$belongTo]['foreign_key_attribute']});
     }
 
     /**
@@ -681,12 +717,33 @@ abstract class ActiveRecord extends RowGateway {
      * @return type
      */
     protected function create_many($table) {
-
-        $class = new $this->hasMany[$table][0]($this->getDbAdapter());
-        $classname = strtolower(end(explode("\\", get_called_class())));
-        $class->belongsTo[$classname]['key'] = $this->{$this->primaryKeyColumn[0]};
-
+        $class = new $this->hasMany[$table]['class']($this->getDbAdapter());
+        $classname = @end(explode("\\", get_called_class()));
+        $class->belongsTo[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
         return $class;
+    }
+
+    /**
+     * Delete a row with Relationship by foreinge key
+     */
+    public function destroy() {
+        if (!empty($this->hasMany)) {
+            foreach ($this->hasMany as $key => $value) {
+                $class = $this->create_many($key);
+                $result = $class->all();
+                if (!empty($result)) {
+                    if (is_array($result)) {
+                        foreach ($result as $temp_value) {
+                            $temp_value->delete();
+                        }
+                    } else {
+                        $result->delete();
+                    }
+                }
+            }
+        }
+
+        $this->delete();
     }
 
 }

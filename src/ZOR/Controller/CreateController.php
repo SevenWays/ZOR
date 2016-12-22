@@ -84,27 +84,24 @@ class CreateController extends AbstractActionController {
 
     public function generateAction() {
         $service = new GenerateService();
-        $module = (!empty($this->request->getParam('mname'))) ? strtolower($this->request->getParam('mname')) : 'application';
-        $controllerName = strtolower($this->request->getParam('cname'));
-        $actionstring = strtolower($this->request->getParam('actions'));
+        $module = (!empty($this->request->getParam('module'))) ? strtolower($this->request->getParam('module')) : 'application';
+        $controllerName = strtolower($this->request->getParam('name'));
+        $actionstring = (empty($this->request->getParam('actions'))) ? "index" : strtolower($this->request->getParam('actions'));
 
         $actions = explode(",", $actionstring);
 
         switch ($this->request->getParam('what')) {
             case 'ctrl':
-                if (empty($this->request->getParam('cname'))) {
-                    $this->showAlert(array('error' => array('Controller name is empty')));
-                    return;
-                }
-                if (empty($this->request->getParam('actions'))) {
-                    $this->showAlert(array('error' => array('Actions is empty')));
+                if (empty($this->request->getParam('name'))) {
+                    $this->showAlert(array('error' => array('Controller name is empty!')));
                     return;
                 }
                 $service->generateController($controllerName, $module, $actions);
                 break;
             case 'act':
-
-                if (empty($this->request->getParam('cname'))) {
+                $cname = strtolower($this->request->getParam('cname'));
+                if (empty($cname)) {
+                    var_dump($cname);
                     $this->showAlert(array('error' => array('Controller name is empty')));
                     return;
                 }
@@ -112,18 +109,69 @@ class CreateController extends AbstractActionController {
                     $this->showAlert(array('error' => array('Actions is empty')));
                     return;
                 }
-                $service->generateActions($actions, $module, $controllerName);
+                $service->generateActions($actions, $module, $cname);
                 break;
-                case 'model':
-                    
-                    $service->generateModel(strtolower($this->request->getParam('name')), $module,$this->request->getParam('columns'));
-                   // $service->createTable(strtolower($this->request->getParam('name')),$this->request->getParam('columns'));
+            case 'model':
+             /*   $sett = array(
+                    'driver' => 'Pdo',
+                    'dsn' => 'mysql:dbname=zor;host=localhost',
+                    'username' => 'root',
+                    'password' => 'emily2007',
+                    'driver_options' => array(
+                        \Pdo::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''
+                ));
+                $dbadapter = new Adapter($sett);*/
+              $dbadapter =  $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
+                
+                $service->generateModel(strtolower($this->request->getParam('name')), $module, $this->request->getParam('columns'), $dbadapter);
             default:
                 break;
         }
 
         $this->showAlert($service->getMessages());
     }
+
+    /*  public function generateActionFr() {
+      $service = new GenerateService();
+      $module = (!empty($this->request->getParam('mname'))) ? strtolower($this->request->getParam('mname')) : 'application';
+      $controllerName = strtolower($this->request->getParam('cname'));
+      $actionstring = strtolower($this->request->getParam('actions'));
+
+      $actions = explode(",", $actionstring);
+
+      switch ($this->request->getParam('what')) {
+      case 'ctrl':
+      if (empty($this->request->getParam('cname'))) {
+      $this->showAlert(array('error' => array('Controller name is empty')));
+      return;
+      }
+      if (empty($this->request->getParam('actions'))) {
+      $this->showAlert(array('error' => array('Actions is empty')));
+      return;
+      }
+      $service->generateController($controllerName, $module, $actions);
+      break;
+      case 'act':
+
+      if (empty($this->request->getParam('cname'))) {
+      $this->showAlert(array('error' => array('Controller name is empty')));
+      return;
+      }
+      if (empty($this->request->getParam('actions'))) {
+      $this->showAlert(array('error' => array('Actions is empty')));
+      return;
+      }
+      $service->generateActions($actions, $module, $controllerName);
+      break;
+      case 'model':
+      $service->generateModel(strtolower($this->request->getParam('name')), $module,$this->request->getParam('columns'));
+      // $service->createTable(strtolower($this->request->getParam('name')),$this->request->getParam('columns'));
+      default:
+      break;
+      }
+
+      $this->showAlert($service->getMessages());
+      } */
 
     public function showAlert(array $messages) {
         $this->_console = $this->getServiceLocator()->get('console');
@@ -140,7 +188,7 @@ class CreateController extends AbstractActionController {
                 case 'info':
                     $color = Color::BLUE;
                     break;
-                 case 'sucesse':
+                case 'sucesse':
                     $color = Color::GREEN;
                     break;
                 default:

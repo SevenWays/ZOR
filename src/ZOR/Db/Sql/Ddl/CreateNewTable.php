@@ -42,6 +42,7 @@ namespace ZOR\Db\Sql\Ddl;
 
 use Zend\Db\Adapter\Adapter;
 use ZOR\Db\Sql\Ddl\Column\Integer;
+//use Zend\Db\Sql\Ddl\Column\Integer;
 use Zend\Db\Sql\Ddl\Column\BigInteger;
 use Zend\Db\Sql\Ddl\Column\Blob;
 use Zend\Db\Sql\Ddl\Column\Varchar;
@@ -90,6 +91,9 @@ class CreateNewTable {
 
                 if (!key_exists(1, $result)) {
                     $result[1] = null;
+                }
+                if (!key_exists(3, $result)) {
+                    $result[3] = 'null';
                 }
 
                 foreach ($result as $key => $value) {
@@ -151,6 +155,21 @@ class CreateNewTable {
         return $this->dbAdapter;
     }
 
+    protected function generatePrimaryKeyAttr($attr) {
+        if ($this->getDbAdapter()->getPlatform() instanceof \Zend\Db\Adapter\Platform\Mysql) {
+            $this->columns[$attr]->setOption('autoincrement', 'auto_increment');
+            $this->columns[$attr]->setOption('attribute', 'unsigned');
+            $this->columns["id"]->setNullable(TRUE);
+        } elseif ($this->getDbAdapter()->getPlatform() instanceof \Zend\Db\Adapter\Platform\Sqlite) {
+            $this->columns[$attr]->setOption('autoincrement', null);
+            $this->columns["id"]->setNullable(TRUE);
+        }
+        
+        $this->addConstraint('primarykey', $attr, $attr);
+        $id = array_pop($this->columns);
+        array_unshift($this->columns, $id);
+    }
+
     public function createTable() {
 
         $adapter = $this->getDbAdapter();
@@ -164,16 +183,13 @@ class CreateNewTable {
 
             if (!key_exists("id", $this->columns)) {
                 $this->createIntegerColumn("id");
-                $this->columns["id"]->setOption('auto increment', true);
-                $this->addConstraint('primarykey', "id", "id");
-                $id = array_pop($this->columns);
-                array_unshift($this->columns, $id);
+                $this->generatePrimaryKeyAttr("id");
             }
             if (!key_exists("created_at", $this->columns)) {
                 $this->createDateTimeColumn("created_at");
             }
             if (!key_exists("updated_at", $this->columns)) {
-                $this->createTimestampColumn("updated_at", false, null, array('on_update'));
+                $this->createDateTimeColumn("updated_at");
             }
 
             foreach ($this->columns as $column) {
@@ -188,7 +204,6 @@ class CreateNewTable {
         }
 
         $adapter->query($tb->getSqlString($adapter->getPlatform()), Adapter::QUERY_MODE_EXECUTE);
-
         return $tb->getSqlString($adapter->getPlatform());
     }
 
@@ -218,7 +233,7 @@ class CreateNewTable {
         $this->columns[$this->field_name]->setOption($key, $value);
     }
 
-    protected function setNullable($param) {
+    protected function setNullable($param='null') {
         if ($param == 'null') {
             $this->columns[$this->field_name]->setNullable(true);
         } else {
@@ -233,7 +248,8 @@ class CreateNewTable {
     }
 
     protected function createType($type) {
-        preg_match_all('/(\w+)/', $type, $match=array());
+        $match = array();
+        preg_match_all('/(\w+)/', $type, $match);
 
         $field_type = (isset($match[0][0])) ? ucfirst($match[0][0]) : 'Varchar';
         $length = (isset($match[0][1])) ? $match[0][1] : 255;

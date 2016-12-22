@@ -46,11 +46,11 @@
  * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-chdir('../../..');
+chdir('../..');
 define('APP_ROOT_DIR', getcwd());
 
 ini_set('user_agent', 'ZOR - ZendOnRails command line tool');
-
+echo APP_ROOT_DIR;
 // load autoloader
 if (file_exists(APP_ROOT_DIR . "/vendor/autoload.php")) {
     require_once APP_ROOT_DIR . "/vendor/autoload.php";
@@ -73,7 +73,7 @@ if (file_exists(APP_ROOT_DIR . "/vendor/autoload.php")) {
   } else { */
 $appConfig = array(
     'modules' => array(
-        'ZOR',
+        'ZOR'
     ),
     'module_listener_options' => array(
         'config_glob_paths' => array(

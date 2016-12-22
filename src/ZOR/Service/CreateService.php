@@ -41,8 +41,8 @@ namespace ZOR\Service;
 
 class CreateService extends AbstractService {
 
-    const APPLICATION_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonApplication/archive/master.zip';
-    const MODULE_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonModule/archive/master.zip';
+    const APPLICATION_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonApplication/archive/release-2.5.0.zip';
+    const MODULE_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonModule/archive/2.0.0.zip';
 
     protected $_filename = "application.zip";
     protected $_extractedSkeleton = null;
@@ -55,10 +55,12 @@ class CreateService extends AbstractService {
     }
 
     public function createApplication($filepath) {
-        $this->_app_root_dir = $filepath;
+        
+        $this->_app_root_dir = $filepath;       
         $this->_filename = $this->getModuleName(self::APPLICATION_SKELETON_URL) . ".zip";
         $this->create(self::APPLICATION_SKELETON_URL, $filepath);
         $this->includeModule('ZOR');
+        $this->createDBConnect();
     }
 
     public function createModule($name, $filepath) {
@@ -94,7 +96,7 @@ class CreateService extends AbstractService {
         if ($this->downloadFromGit($link)) {
             if ($this->extractFile()) {
                 $this->recurse_copy($this->_extractedSkeleton, $install_dir);
-                //   $this->installPhar($install_dir);
+                $this->installPhar($install_dir);
             }
         }
     }
@@ -103,7 +105,7 @@ class CreateService extends AbstractService {
      * From ZFTools
      * @param string $path
      */
-    /* protected function installPhar($path) {
+    protected function installPhar($path) {
       $tmpDir = $this->getTempDir();
       $this->setMessage($path,'info');
       if (file_exists("$path/composer.phar")) {
@@ -121,7 +123,7 @@ class CreateService extends AbstractService {
       }
       chmod("$path/composer.phar", 0755);
       exec("php $path/composer.phar install");
-      } */
+      } 
 
     protected function extractFile() {
         $zip = new \ZipArchive();
@@ -214,6 +216,37 @@ class CreateService extends AbstractService {
             }
         } else {
             $this->setMessage('Application config file not found', 'error');
+        }
+    }
+
+    public function createDBConnect() {
+        $globalConfigFile = $this->_app_root_dir . "/config/autoload/global.php";
+        $dbFile =  $this->_app_root_dir . "/data/database/sqlite.db";
+        if (file_exists($globalConfigFile)) {
+            
+            $this->saveContentIntoFile("", $dbFile);
+            
+            chmod($dbFile, 0664);
+            chgrp($dbFile, "www-data");
+            chgrp(dirname($dbFile), "www-data");
+            
+            $global_config = require $globalConfigFile;
+
+            $global_config['db'] = array(
+                'driver' => 'Pdo_Sqlite',
+                'database' => $dbFile
+            );
+            $global_config['service_manager'] = array(
+                'factories' => array(
+                    'Zend\Db\Adapter\Adapter'
+                    => 'Zend\Db\Adapter\AdapterServiceFactory',
+                ),
+            );
+
+            copy($globalConfigFile, $globalConfigFile . ".old");
+            file_put_contents($globalConfigFile, "<?php return " . $this->exportConfig($global_config) . ";");
+        } else {
+            $this->setMessage('Global config file not found', 'error');
         }
     }
 

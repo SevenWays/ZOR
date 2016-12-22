@@ -49,8 +49,18 @@ class Module implements ConsoleBannerProviderInterface {
             'create foreignmodule --link= [--path=]' => 'Create a foreign module from GitHub zip link',
             array('[--link]', 'Zip file on GitHub'),
             array('[--path]', 'if workspace differently'),
-            'generate controller --name= --module --actions' => 'Generate a controller',
-        );
+            'generate ctrl --name= [--module=] [--actions=]' => 'Generate a Controller',
+             array('[--name]', 'Name of Controller'),
+            array('[--module]', 'Name of Module. Default:"Application"'),
+             array('[--actions]', 'Names of Actions. Default: "index"'),
+            'generate act [--ctrl=] [--module=] [--actions=]' => 'Generate the Actions for a Controller',
+            array('[--cname]', 'Name of Controller'),
+            array('[--module]', 'Name of Module. Default:"Application"'),
+            'generate model [--name=] [--module=] [--columns=]' => 'Generate a Model with ActiveRecords',
+            array('[--name]', 'Name of Model'),
+            array('[--module]', 'Name of Module. Default:"Application"'),
+             array('[--columns]', 'A string of attributs'),
+            );
     }
 
 }

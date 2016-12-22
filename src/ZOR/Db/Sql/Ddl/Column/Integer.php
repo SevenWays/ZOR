@@ -29,8 +29,8 @@ class Integer extends Column
             $data[0][1][1] .= ' ' . $options['attribute'];
         }
         
-        if (isset($options['auto increment'])) {
-            $data[0][1][1] .= ' AUTO_INCREMENT';
+       if (isset($options['autoincrement'])) {
+            $data[0][1][1] .= ' '.$options['autoincrement'];
         }
 
         return $data;

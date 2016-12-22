@@ -46,4 +46,17 @@ abstract class AbstractService {
         return static::$valueGenerator;
     }
 
+    public function saveContentIntoFile($content, $path, $mode = 0777) {
+        $dir = dirname($path);
+        if (!file_exists($dir)) {
+            mkdir($dir, $mode, true);
+        }
+
+        if (file_put_contents($path, $content) !== FALSE) {
+            $this->setMessage('The file ' . $path . ' was created', 'info');
+        } else {
+            $this->setMessage('An error has occurred!', 'error');
+        }
+    }
+
 }
