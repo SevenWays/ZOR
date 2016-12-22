@@ -1,5 +1,5 @@
 {
-    "name": "zor/zor",
+    "name": "sevenways/zor",
     "type": "library",
     "description": "Module for Zend Framework 2",
     "keywords": ["Tool","ActiveRecord"],
