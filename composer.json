@@ -1,0 +1,26 @@
+{
+    "name": "sevenways/zor",
+    "type": "library",
+    "description": "Module for Zend Framework 2",
+    "keywords": ["Tool","ActiveRecord"],
+    "homepage": "https://github.com/SevenWays/ZOR",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sergej Hoffmann",
+            "email": "info@seven-ways.net",
+            "homepage": "http://seven-ways.net",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+         "php": ">=5.5",
+        "zendframework/zendframework": "~2.5"
+    },
+    "autoload": {
+        "psr-0": {
+            "ZOR\\": "src/"
+        }
+    },
+        "bin": ["bin/zor.php", "bin/zor.php"]
+}
