@@ -77,7 +77,6 @@ class CreateController extends AbstractActionController {
         }
 
         $this->showAlert($service->getMessages());
-        $this->showAlert(array('info' => array("Create " . $this->request->getParam('what') . " is completed")));
 
         return;
     }
@@ -112,8 +111,8 @@ class CreateController extends AbstractActionController {
                 $service->generateActions($actions, $module, $cname);
                 break;
             case 'model':
-              $dbadapter =  $this->serviceLocator->get("Zend\Db\Adapter\Adapter");              
-              $service->generateModel(strtolower($this->request->getParam('name')), $module, $this->request->getParam('columns'), $dbadapter);
+                $dbadapter = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
+                $service->generateModel(strtolower($this->request->getParam('name')), $module, $this->request->getParam('columns'), $dbadapter);
             default:
                 break;
         }

@@ -55,16 +55,29 @@ class CreateService extends AbstractService {
     }
 
     public function createApplication($filepath) {
-        
-        $this->_app_root_dir = $filepath;       
+
+        $this->_app_root_dir = $filepath;
+
+        if ($this->moduleExist("Application")) {
+            $this->setMessage('Application is already installed', 'error');
+            return FALSE;
+        }
+
         $this->_filename = $this->getModuleName(self::APPLICATION_SKELETON_URL) . ".zip";
         $this->create(self::APPLICATION_SKELETON_URL, $filepath);
         $this->includeModule('ZOR');
         $this->createDBConnect();
+        $this->setMessage("Create Application is completed");
     }
 
     public function createModule($name, $filepath) {
-        $this->_app_root_dir = APP_ROOT_DIR;
+        $this->_app_root_dir = $filepath;
+
+        if ($this->moduleExist($name)) {
+            $this->setMessage('Module is already ' . $name . 'exist', 'error');
+            return FALSE;
+        }
+
         $this->_filename = $this->getModuleName(self::MODULE_SKELETON_URL) . ".zip";
         $this->_modulename = strtolower($name);
         if (!file_exists($filepath . "/module")) {
@@ -74,15 +87,24 @@ class CreateService extends AbstractService {
         }
         $this->create(self::MODULE_SKELETON_URL, $filepath);
         $this->includeModule(ucfirst($this->_modulename));
+        $this->setMessage("Create " . $name . " is completed");
     }
 
     public function createForeignModule($gitlink, $filepath) {
         $this->_app_root_dir = $filepath;
         $this->_modulename = $this->getModuleName($gitlink);
+
+        if ($this->moduleExist($this->_modulename)) {
+            $this->setMessage('Module is already ' . $this->_modulename . 'exist', 'error');
+            return FALSE;
+        }
+
+
         $this->_filename = $this->_modulename . ".zip";
         $filepath = $filepath . "/vendor/" . $this->_modulename;
         $this->create($gitlink, $filepath);
         $this->includeModule($this->_modulename);
+        $this->setMessage("Create module " . $this->_modulename . " is completed");
     }
 
     protected function getModuleName($param) {
@@ -101,29 +123,36 @@ class CreateService extends AbstractService {
         }
     }
 
+    protected function moduleExist($name) {
+        if (file_exists($this->_app_root_dir . "/module/" . $name)) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
     /**
      * From ZFTools
      * @param string $path
      */
     protected function installPhar($path) {
-      $tmpDir = $this->getTempDir();
-      $this->setMessage($path,'info');
-      if (file_exists("$path/composer.phar")) {
-      exec("php $path/composer.phar self-update");
-      } else {
-      if (!file_exists("$tmpDir/composer.phar")) {
-      if (!file_exists("$tmpDir/composer_installer.php")) {
-      file_put_contents(
-      "$tmpDir/composer_installer.php", '?>' . file_get_contents('https://getcomposer.org/installer')
-      );
-      }
-      exec("php $tmpDir/composer_installer.php --install-dir $tmpDir");
-      }
-      copy("$tmpDir/composer.phar", "$path/composer.phar");
-      }
-      chmod("$path/composer.phar", 0755);
-      exec("php $path/composer.phar install");
-      } 
+        $tmpDir = $this->getTempDir();
+        $this->setMessage($path, 'info');
+        if (file_exists("$path/composer.phar")) {
+            exec("php $path/composer.phar self-update");
+        } else {
+            if (!file_exists("$tmpDir/composer.phar")) {
+                if (!file_exists("$tmpDir/composer_installer.php")) {
+                    file_put_contents(
+                            "$tmpDir/composer_installer.php", '?>' . file_get_contents('https://getcomposer.org/installer')
+                    );
+                }
+                exec("php $tmpDir/composer_installer.php --install-dir $tmpDir");
+            }
+            copy("$tmpDir/composer.phar", "$path/composer.phar");
+        }
+        chmod("$path/composer.phar", 0755);
+        exec("php $path/composer.phar install");
+    }
 
     protected function extractFile() {
         $zip = new \ZipArchive();
@@ -221,15 +250,15 @@ class CreateService extends AbstractService {
 
     public function createDBConnect() {
         $globalConfigFile = $this->_app_root_dir . "/config/autoload/global.php";
-        $dbFile =  $this->_app_root_dir . "/data/database/sqlite.db";
+        $dbFile = $this->_app_root_dir . "/data/database/sqlite.db";
         if (file_exists($globalConfigFile)) {
-            
+
             $this->saveContentIntoFile("", $dbFile);
-            
+
             chmod($dbFile, 0664);
             chgrp($dbFile, "www-data");
             chgrp(dirname($dbFile), "www-data");
-            
+
             $global_config = require $globalConfigFile;
 
             $global_config['db'] = array(
