@@ -5,7 +5,11 @@
  */
 
 $basePath = getcwd();
+<<<<<<< HEAD
 define('APP_ROOT_DIR', $basePath);
+=======
+
+>>>>>>> dbe5507dcbdd149b7791de73c37ad4978498dad4
 ini_set('user_agent', 'ZendOnRail - Zend Framework 2 Modul');
 
 // load autoloader
