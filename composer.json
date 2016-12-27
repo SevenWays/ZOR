@@ -18,8 +18,9 @@
         "zendframework/zendframework": "~2.5"
     },
     "autoload": {
-        "classmap": [
-            
-        ]
-    }
+        "psr-4": {
+            "ZOR\\": "src/"
+        }
+    },
+        "bin": ["bin/zor.php", "bin/zor.php"]
 }
