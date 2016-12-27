@@ -112,18 +112,8 @@ class CreateController extends AbstractActionController {
                 $service->generateActions($actions, $module, $cname);
                 break;
             case 'model':
-             /*   $sett = array(
-                    'driver' => 'Pdo',
-                    'dsn' => 'mysql:dbname=zor;host=localhost',
-                    'username' => 'root',
-                    'password' => 'emily2007',
-                    'driver_options' => array(
-                        \Pdo::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''
-                ));
-                $dbadapter = new Adapter($sett);*/
-              $dbadapter =  $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
-                
-                $service->generateModel(strtolower($this->request->getParam('name')), $module, $this->request->getParam('columns'), $dbadapter);
+              $dbadapter =  $this->serviceLocator->get("Zend\Db\Adapter\Adapter");              
+              $service->generateModel(strtolower($this->request->getParam('name')), $module, $this->request->getParam('columns'), $dbadapter);
             default:
                 break;
         }
