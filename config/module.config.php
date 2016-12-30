@@ -6,7 +6,7 @@ return array(
             'routes' => array(
                 'new' => array(
                     'options' => array(
-                        'route' => 'create (app|module|fmodule):what [--name=] [--link=] [--path=]',
+                        'route' => 'create (new|module|fmodule):what [--name=] [--link=] [--path=]',
                         'defaults' => array(
                             'controller' => 'ZOR\Controller\Create',
                             'action' => 'create'

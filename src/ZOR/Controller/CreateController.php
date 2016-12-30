@@ -57,6 +57,13 @@ class CreateController extends AbstractActionController {
         $filepath = (empty($this->request->getParam('path'))) ? APP_ROOT_DIR : $this->request->getParam('path');
 
         switch ($this->request->getParam('what')) {
+            case 'new':
+                if (empty($this->request->getParam('name'))) {
+                    $this->showAlert(array('error' => array('Project name is empty')));
+                    return;
+                }
+                   $service->createApplication($filepath);
+                break;
             case 'module':
                 if (empty($this->request->getParam('name'))) {
                     $this->showAlert(array('error' => array('Module name is empty')));
@@ -72,7 +79,6 @@ class CreateController extends AbstractActionController {
                 $service->createForeignModule($this->request->getParam('link'), $filepath);
                 break;
             default:
-                $service->createApplication($filepath);
                 break;
         }
 

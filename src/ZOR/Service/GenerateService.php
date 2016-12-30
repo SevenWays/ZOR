@@ -57,7 +57,7 @@ class GenerateService extends AbstractService {
         $ctrlPath = $modulName . '/src/' . ucfirst($module) . '/Controller/' . ucfirst($name) . 'Controller.php';
 
         if (file_exists($ctrlPath)) {
-            $this->setMessage('Controller ' . ucfirst($name) . ' exists', 'error');
+            $this->setMessage('Controller already ' . ucfirst($name) . ' exists', 'error');
             return;
         }
 
@@ -154,7 +154,7 @@ class GenerateService extends AbstractService {
         $modelPath = $modulPath . '/src/' . ucfirst($module) . '/Model/' . ucfirst($name) . '.php';
 
         if (file_exists($modelPath)) {
-            $this->setMessage('Model ' . ucfirst($name) . ' exists', 'error');
+            $this->setMessage('Model already ' . ucfirst($name) . ' exists', 'error');
             return;
         }
 

@@ -40,7 +40,6 @@ abstract class ActiveRecord extends RowGateway {
      * @var array
      */
     protected $belongsTo = array();
-    
     protected $models = array();
 
     /**
@@ -632,6 +631,17 @@ abstract class ActiveRecord extends RowGateway {
             }
         }
 
+        if (!empty($this->models)) {
+
+            foreach ($this->models as $key => $value) {
+                if (key_exists($key, $this->hasMany) && !empty($this->hasMany[$key]['through'])) {
+                    $this->saveMany($this->hasMany[$key]['through'], $value);
+                }  else {
+                    throw new \Exception("Relationship not exist to $key");
+                }
+            }
+        }
+
         $this->data['created_at'] = (!empty($this->data['created_at'])) ? $this->data['created_at'] : date(self::DATE_FORMAT);
         $this->data['updated_at'] = date(self::DATE_FORMAT);
 
@@ -640,6 +650,14 @@ abstract class ActiveRecord extends RowGateway {
         return $this;
     }
 
+    protected function saveMany($through, $model) {
+            if (key_exists($through, $this->hasMany)){
+                 $class = new $this->hasMany[$through]['class']($this->getDbAdapter());
+                 $class->{$class->belongTo[get_class($this)]['foreign_key_attribute']} = $this->primaryKeyColumn;
+                 $class->{$class->belongTo[get_class($model)]['foreign_key_attribute']} = $model->primaryKeyColumn;
+                 var_dump($class);
+            }
+    }
     /**
      * Return true if the record is new, and not saved
      * @return bool
@@ -678,9 +696,9 @@ abstract class ActiveRecord extends RowGateway {
 
         if (preg_match('/(^add_)(.*)/', $func, $result)) {
             if (!empty($this->hasMany && key_exists($result[2], $this->hasMany))) {
-                    return $this->append_model($result[2], $arguments);
+                return $this->append_model($result[2], $arguments);
             } else {
-                throw new \Exception("Relationship not exist to $result[2]");    
+                throw new \Exception("Relationship not exist to $result[2]");
             }
         }
 
@@ -702,8 +720,6 @@ abstract class ActiveRecord extends RowGateway {
 
     protected function append_model($model_name, $model) {
         $this->models[$model_name][] = $model;
-        
-        var_dump($this->models);
     }
 
     protected function getBelong($belongTo) {

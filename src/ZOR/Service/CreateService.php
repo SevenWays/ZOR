@@ -255,7 +255,7 @@ class CreateService extends AbstractService {
 
             $this->saveContentIntoFile("", $dbFile);
 
-            chmod($dbFile, 0664);
+            chmod($dbFile, 0666);
             chgrp($dbFile, "www-data");
             chgrp(dirname($dbFile), "www-data");
 

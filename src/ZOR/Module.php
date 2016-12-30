@@ -53,12 +53,12 @@ class Module implements ConsoleUsageProviderInterface,
 
     public function getConsoleUsage(Console $console) {
         return array(
-            'create application [--path=]' => 'Create an application',
+            'create new [--path=]' => 'Create an application',
             array('[--path]', 'if workspace differently'),
             'create module --name= [--path=]' => 'Create a Module',
             array('[--name]', 'Name of Module'),
             array('[--path]', 'if workspace differently'),
-            'create foreignmodule --link= [--path=]' => 'Create a foreign module from GitHub zip link',
+            'create fmodule --link= [--path=]' => 'Create a foreign module from GitHub zip link',
             array('[--link]', 'Zip file on GitHub'),
             array('[--path]', 'if workspace differently'),
             'generate ctrl --name= [--module=] [--actions=]' => 'Generate a Controller',
