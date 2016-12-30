@@ -653,9 +653,9 @@ abstract class ActiveRecord extends RowGateway {
     protected function saveMany($through, $model) {
             if (key_exists($through, $this->hasMany)){
                  $class = new $this->hasMany[$through]['class']($this->getDbAdapter());
-                 $class->{$class->belongTo[get_class($this)]['foreign_key_attribute']} = $this->primaryKeyColumn;
-                 $class->{$class->belongTo[get_class($model)]['foreign_key_attribute']} = $model->primaryKeyColumn;
-                 var_dump($class);
+                 $class->{$class->belongsTo[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
+                 $class->{$class->belongsTo[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
+                 $class->save();
             }
     }
     /**
@@ -696,7 +696,7 @@ abstract class ActiveRecord extends RowGateway {
 
         if (preg_match('/(^add_)(.*)/', $func, $result)) {
             if (!empty($this->hasMany && key_exists($result[2], $this->hasMany))) {
-                return $this->append_model($result[2], $arguments);
+                return $this->append_model($result[2], $arguments[0]);
             } else {
                 throw new \Exception("Relationship not exist to $result[2]");
             }
@@ -719,7 +719,7 @@ abstract class ActiveRecord extends RowGateway {
     }
 
     protected function append_model($model_name, $model) {
-        $this->models[$model_name][] = $model;
+        $this->models[$model_name] = $model;
     }
 
     protected function getBelong($belongTo) {
