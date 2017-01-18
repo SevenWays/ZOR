@@ -164,7 +164,7 @@ class CreateNewTable {
             $this->columns[$attr]->setOption('autoincrement', null);
             $this->columns["id"]->setNullable(TRUE);
         }
-        
+
         $this->addConstraint('primarykey', $attr, $attr);
         $id = array_pop($this->columns);
         array_unshift($this->columns, $id);
@@ -233,7 +233,7 @@ class CreateNewTable {
         $this->columns[$this->field_name]->setOption($key, $value);
     }
 
-    protected function setNullable($param='null') {
+    protected function setNullable($param = 'null') {
         if ($param == 'null') {
             $this->columns[$this->field_name]->setNullable(true);
         } else {

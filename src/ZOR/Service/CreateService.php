@@ -46,7 +46,6 @@ class CreateService extends AbstractService {
 
     protected $_filename = "application.zip";
     protected $_extractedSkeleton = null;
-    protected $_modulename = null;
 
     public function __construct() {
         if (!extension_loaded('zip')) {
@@ -56,7 +55,7 @@ class CreateService extends AbstractService {
 
     public function createApplication($filepath) {
 
-        $this->_app_root_dir = $filepath;
+        $this->setAppRootDir($filepath);
 
         if ($this->moduleExist("Application")) {
             $this->setMessage('Application is already installed', 'error');
@@ -64,50 +63,46 @@ class CreateService extends AbstractService {
         }
 
         $this->_filename = $this->getModuleName(self::APPLICATION_SKELETON_URL) . ".zip";
-        $this->create(self::APPLICATION_SKELETON_URL, $filepath);
+        $this->create(self::APPLICATION_SKELETON_URL, $this->getAppRootDir());
         $this->includeModule('ZOR');
         $this->createDBConnect();
         $this->setMessage("Create Application is completed");
     }
 
     public function createModule($name, $filepath) {
-        $this->_app_root_dir = $filepath;
+        $this->normalizeNames($name);
+        $this->setAppRootDir($filepath);
 
-        if ($this->moduleExist($name)) {
-            $this->setMessage('Module is already ' . $name . 'exist', 'error');
+        if ($this->moduleExist($this->moduleName)) {
+            $this->setMessage('Module is already ' . $this->moduleName . 'exist', 'error');
             return FALSE;
         }
 
         $this->_filename = $this->getModuleName(self::MODULE_SKELETON_URL) . ".zip";
-        $this->_modulename = strtolower($name);
-        if (!file_exists($filepath . "/module")) {
-            $filepath = $filepath . "/" . ucfirst($this->_modulename);
-        } else {
-            $filepath = $filepath . "/module/" . ucfirst($this->_modulename);
-        }
-        $this->create(self::MODULE_SKELETON_URL, $filepath);
-        $this->includeModule(ucfirst($this->_modulename));
-        $this->setMessage("Create " . $name . " is completed");
+
+        $this->create(self::MODULE_SKELETON_URL, $this->getAppRootDir() . "/module/" . $this->moduleName);
+        $this->includeModule($this->moduleName);
+        $this->setMessage("Create module " . $this->moduleName . " is completed");
     }
 
     public function createForeignModule($gitlink, $filepath) {
-        $this->_app_root_dir = $filepath;
-        $this->_modulename = $this->getModuleName($gitlink);
+        $this->setAppRootDir($filepath);
+        $modulename = $this->getModuleName($gitlink);
 
-        if ($this->moduleExist($this->_modulename)) {
-            $this->setMessage('Module is already ' . $this->_modulename . 'exist', 'error');
+        if ($this->moduleExist($modulename)) {
+            $this->setMessage('Module is already ' . $modulename . 'exist', 'error');
             return FALSE;
         }
 
 
-        $this->_filename = $this->_modulename . ".zip";
-        $filepath = $filepath . "/vendor/" . $this->_modulename;
+        $this->_filename = $modulename . ".zip";
+        $filepath = $this->getAppRootDir() . "/vendor/" . $modulename;
         $this->create($gitlink, $filepath);
-        $this->includeModule($this->_modulename);
-        $this->setMessage("Create module " . $this->_modulename . " is completed");
+        $this->includeModule($modulename);
+        $this->setMessage("Create module " . $modulename . " is completed");
     }
 
-    protected function getModuleName($param) {
+    private function getModuleName($param) {
         $array = explode('/', $param);
         $c = count($array) - 3;
         return $array[$c];
@@ -124,14 +119,14 @@ class CreateService extends AbstractService {
     }
 
     protected function moduleExist($name) {
-        if (file_exists($this->_app_root_dir . "/module/" . $name)) {
+        if (file_exists($this->getAppRootDir() . "/module/" . $name)) {
             return TRUE;
         }
         return FALSE;
     }
 
     /**
-     * From ZFTools
+     * From ZFTool
      * @param string $path
      */
     protected function installPhar($path) {
@@ -196,9 +191,9 @@ class CreateService extends AbstractService {
 
     protected function renameModuleOrder($file, $dst) {
         if ($file == "ZendSkeletonModule") {
-            rename($dst . '/' . $file, $dst . '/' . ucfirst($this->_modulename));
+            rename($dst . '/' . $file, $dst . '/' . $this->moduleName);
         } elseif ($file == "zend-skeleton-module") {
-            rename($dst . '/' . $file, $dst . '/' . $this->_modulename);
+            rename($dst . '/' . $file, $dst . '/' . $this->camelCaseToDash($this->moduleName));
         } elseif ($file == "skeleton") {
             rename($dst . '/' . $file, $dst . '/' . 'index');
         }
@@ -213,9 +208,9 @@ class CreateService extends AbstractService {
     protected function renameNamespaceIntoFile($dst) {
 
         $content = file_get_contents($dst);
-        $content = str_replace("ZendSkeletonModule", ucfirst($this->_modulename), $content);
-        $content = str_replace('module-name-here', $this->_modulename, $content);
-        $content = str_replace('module-specific-root', $this->_modulename, $content);
+        $content = str_replace("ZendSkeletonModule", $this->moduleName, $content);
+        $content = str_replace('module-name-here', $this->camelCaseToDash($this->moduleName), $content);
+        $content = str_replace('module-specific-root', $this->camelCaseToDash($this->moduleName), $content);
         $content = str_replace('Skeleton', 'Index', $content);
         $content = str_replace('SkeletonController', 'IndexController', $content);
         file_put_contents($dst, $content);
@@ -236,12 +231,12 @@ class CreateService extends AbstractService {
     }
 
     public function includeModule($name) {
-        if (file_exists($this->_app_root_dir . "/config/application.config.php")) {
-            $application_config = require $this->_app_root_dir . "/config/application.config.php";
+        if (file_exists($this->getAppRootDir() . "/config/application.config.php")) {
+            $application_config = require $this->getAppRootDir() . "/config/application.config.php";
             if (!in_array($name, $application_config['modules'])) {
                 $application_config['modules'][] = $name;
-                copy($this->_app_root_dir . "/config/application.config.php", $this->_app_root_dir . "/config/application.config.old");
-                file_put_contents($this->_app_root_dir . "/config/application.config.php", "<?php return " . $this->exportConfig($application_config) . ";");
+                copy($this->getAppRootDir() . "/config/application.config.php", $this->getAppRootDir() . "/config/application.config.old");
+                file_put_contents($this->getAppRootDir() . "/config/application.config.php", "<?php return " . $this->exportConfig($application_config) . ";");
             }
         } else {
             $this->setMessage('Application config file not found', 'error');
@@ -249,8 +244,8 @@ class CreateService extends AbstractService {
     }
 
     public function createDBConnect() {
-        $globalConfigFile = $this->_app_root_dir . "/config/autoload/global.php";
-        $dbFile = $this->_app_root_dir . "/data/database/sqlite.db";
+        $globalConfigFile = $this->getAppRootDir() . "/config/autoload/global.php";
+        $dbFile = $this->getAppRootDir() . "/data/database/sqlite.db";
         if (file_exists($globalConfigFile)) {
 
             $this->saveContentIntoFile("", $dbFile);

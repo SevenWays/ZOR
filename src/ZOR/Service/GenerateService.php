@@ -53,138 +53,121 @@ class GenerateService extends AbstractService {
     private $class = null;
 
     public function generateController($name, $module, array $actions = array()) {
-        $modulName = $this->getAppRootDir() . '/module/' . ucfirst($module);
-        $ctrlPath = $modulName . '/src/' . ucfirst($module) . '/Controller/' . ucfirst($name) . 'Controller.php';
 
-        if (file_exists($ctrlPath)) {
-            $this->setMessage('Controller already ' . ucfirst($name) . ' exists', 'error');
+        $this->normalizeNames($module, $name);
+
+        if (file_exists($this->controllerPath)) {
+            $this->setMessage('Controller already ' . $this->controllerName . ' exists', 'error');
             return;
         }
 
-        $ctrlName = ucfirst($name) . 'Controller';
-        $namespaceName = ucfirst($module) . '\Controller';
+        $ctrClassName = $this->controllerName . 'Controller';
+        $ctrNamespace = $this->moduleName . '\Controller';
 
-        $this->class = $this->generateClass($ctrlName, $namespaceName);
+        $this->class = $this->generateClass($ctrClassName, $ctrNamespace, 'AbstractActionController');
 
         $this->class->addUse('Zend\Mvc\Controller\AbstractActionController')
-                ->addUse('Zend\View\Model\ViewModel')
-                ->setExtendedClass('AbstractActionController');
+                ->addUse('Zend\View\Model\ViewModel');
 
         $this->generateActions($actions, $module, $name);
 
+        $this->executeFileGenerate($this->controllerPath);
 
-        $file = new FileGenerator(
-                array(
-            'classes' => array($this->class),
-                )
-        );
-
-        $this->saveContentIntoFile($file->generate(), $ctrlPath);
-
-
-
-        if (file_exists($modulName . "/config/module.config.php")) {
-            $module_config = require $modulName . "/config/module.config.php";
-            $module_config['controllers']['invokables'][$namespaceName . '\\' . ucfirst($name)] = $namespaceName . '\\' . $ctrlName;
-            copy($modulName . "/config/module.config.php", $modulName . "/config/module.config.php.old");
-            file_put_contents($modulName . "/config/module.config.php", "<?php return " . $this->exportConfig($module_config) . ";");
-        } else {
-            $this->setMessage('Module config file not found', 'error');
+        $module_config = $this->loadModuleConfig();
+        if (!empty($module_config)) {
+            $module_config['controllers']['invokables'][$ctrNamespace . '\\' . $this->controllerName] = $ctrNamespace . '\\' . $ctrClassName;
+            $this->saveModuleConfig($module_config);
         }
     }
 
     public function generateActions(array $actions, $module, $controller) {
+
+        $this->normalizeNames($module, $controller);
+        $this->normalizeActions($actions);
+
         $fromFileReflection = false;
         $methodArray = array();
-        $class = null;
-
-        $ctrlPath = $this->getAppRootDir() . '/module/' . ucfirst($module) . '/src/' . ucfirst($module) . '/Controller/' . ucfirst($controller) . 'Controller.php';
-        $viewPath = $this->getAppRootDir() . '/module/' . ucfirst($module) . '/view/' . $module . '/' . $controller . '/';
 
         if (is_null($this->class)) {
-            if (!file_exists($ctrlPath)) {
-                $this->setMessage('Controller ' . $controller . ' not exists', 'error');
-                return false;
-            } else {
-                $class = sprintf('%s\\Controller\\%sController', ucfirst($module), ucfirst($controller));
-
-                $fileReflection = new \Zend\Code\Reflection\FileReflection($ctrlPath, true);
-                $classReflection = $fileReflection->getClass($class);
-                $this->class = ClassGenerator::fromReflection($classReflection);
-                $this->class->addUse('Zend\Mvc\Controller\AbstractActionController')
-                        ->addUse('Zend\View\Model\ViewModel')
-                        ->setExtendedClass('AbstractActionController');
-                $fromFileReflection = true;
-            }
+            $fromFileReflection = $this->getControllerClass();
         }
 
-
-        foreach ($actions as $value) {
-            if ($this->class->hasMethod($value . 'Action')) {
-                $this->setMessage("The action $value already exists in controller $controller of module $module.", "error");
+        foreach ($this->actions as $key => $value) {
+            if ($this->class->hasMethod($key . 'Action')) {
+                $this->setMessage("The action $key already exists in controller $this->controllerName of module $this->moduleName.", "error");
                 continue;
             }
 
-            $methodArray[] = $this->generateMethode(strtolower($value) . "Action", array(), MethodGenerator::FLAG_PUBLIC, 'return new ViewModel();');
-            $content = $this->generateView($this->viewContent, $module, $controller, $value);
-            $this->saveContentIntoFile($content, $viewPath . $value . '.phtml');
+            $methodArray[] = $this->generateMethode($key . "Action", array(), MethodGenerator::FLAG_PUBLIC, 'return new ViewModel();');
+            $content = $this->generateView($this->viewContent, $this->moduleName, $this->controllerName, $value);
+            $this->saveContentIntoFile($content, $this->viewFolder . '/' . $value . '.phtml');
         }
 
         if (!empty($methodArray)) {
             $this->class->addMethods($methodArray);
-
             if ($fromFileReflection) {
-                $file = new FileGenerator(
-                        array(
-                    'classes' => array($this->class),
-                        )
-                );
-
-                $this->saveContentIntoFile($file->generate(), $ctrlPath);
+                $this->executeFileGenerate($this->controllerPath);
             }
         }
-
-
         return true;
     }
 
+    private function getControllerClass() {
+        if (!file_exists($this->controllerPath)) {
+            throw new Exception('Controller ' . $this->controllerName . ' not exists', 'error');
+        } else {
+            $className = sprintf('%s\\Controller\\%sController', $this->moduleName, $this->controllerName);
+
+            $fileReflection = new \Zend\Code\Reflection\FileReflection($this->controllerPath, true);
+            $classReflection = $fileReflection->getClass($className);
+            $this->class = ClassGenerator::fromReflection($classReflection);
+            $this->class->addUse('Zend\Mvc\Controller\AbstractActionController')
+                    ->addUse('Zend\View\Model\ViewModel')
+                    ->setExtendedClass('AbstractActionController');
+            return true;
+        }
+    }
+
     public function generateModel($name, $module, $columns, $dbadapter) {
-        
-        $modulPath = $this->getAppRootDir() . '/module/' . ucfirst($module);
-        $modelPath = $modulPath . '/src/' . ucfirst($module) . '/Model/' . ucfirst($name) . '.php';
+        $this->normalizeNames($module);
+        $modelName = $this->underscoreToCamelCase($name);
+        $namespaceName = $this->moduleName . '\Model';
+        $modelPath = $this->modulePath . '/src/' . $this->moduleName . '/Model/' . $modelName . '.php';
 
         if (file_exists($modelPath)) {
-            $this->setMessage('Model already ' . ucfirst($name) . ' exists', 'error');
+            $this->setMessage('Model already ' . $modelName . ' exists', 'error');
             return;
         }
 
-        $modelName = ucfirst($name);
-        $namespaceName = ucfirst($module) . '\Model';
-        
-        $ct = $this->createTable($modelName, $columns, $dbadapter);
+        $ct = $this->createTable(strtolower($name), $columns, $dbadapter);
 
-        $this->class = $this->generateClass($modelName, $namespaceName);
-
-        $this->class->addUse('ZOR\ActiveRecord\ActiveRecord')
-                ->setExtendedClass('ActiveRecord');
-
+        $this->class = $this->generateClass($modelName, $namespaceName, 'ActiveRecord');
+        $this->class->addUse('ZOR\ActiveRecord\ActiveRecord');
         $this->class->addProperty('primaryKeyColumn', $ct->getPrimaryKeyColumn())
                 ->addProperty('table', $ct->getTableName());
-        
-        $file = new FileGenerator(
-                array(
-            'classes' => array($this->class),
-                )
-        );
 
-        $this->saveContentIntoFile($file->generate(), $modelPath);
+        $this->executeFileGenerate($modelPath);
 
-
-        if (file_exists($modulPath . "/config/module.config.php")) {
-            $module_config = require $modulPath . "/config/module.config.php";
+        $module_config = $this->loadModuleConfig();
+        if (!empty($module_config)) {
             $module_config['service_manager']['invokables'][$namespaceName . '\\' . $modelName] = $namespaceName . '\\' . $modelName;
-            copy($modulPath . "/config/module.config.php", $modulPath . "/config/module.config.php.old");
-            file_put_contents($modulPath . "/config/module.config.php", "<?php return " . $this->exportConfig($module_config) . ";");
+            $this->saveModuleConfig($module_config);
+        }
+    }
+
+    private function loadModuleConfig() {
+        if (file_exists($this->modulePath . "/config/module.config.php")) {
+            return require $this->modulePath . "/config/module.config.php";
+        } else {
+            $this->setMessage('Module config file not found', 'error');
+            return null;
+        }
+    }
+
+    private function saveModuleConfig($config) {
+        if (file_exists($this->modulePath . "/config/module.config.php")) {
+            copy($this->modulePath . "/config/module.config.php", $this->modulePath . "/config/module.config.php.old");
+            file_put_contents($this->modulePath . "/config/module.config.php", "<?php return " . $this->exportConfig($config) . ";");
         } else {
             $this->setMessage('Module config file not found', 'error');
         }
@@ -194,9 +177,9 @@ class GenerateService extends AbstractService {
       order,id:integer{11}:unsigned:notnull::auto_increment:primerykey,uniqid:varchar{255}::null:aaa::uniquekey,amount:float{10.4}::notnull:::,created_at:timestamp::null::on_update::foreignkey{name.referenceTable.referenceColumn.onDeleteRule.onUpdateRule}
      */
 
-    protected function createTable($name, $columns,  $dbadapter) {
+    protected function createTable($name, $columns, $dbadapter) {
         try {
-       
+
             $ct = new CreateNewTable($dbadapter);
             $ct->createTableFromString($name, $columns);
             $this->setMessage($ct->createTable());
@@ -226,9 +209,8 @@ class GenerateService extends AbstractService {
      * @param type $methods
      * @return ClassGenerator
      */
-    public function generateClass($name = null, $namespaceName = null, $methods = array()) {
-
-        return new ClassGenerator($name, $namespaceName, null, null, array(), array(), $methods);
+    public function generateClass($name = null, $namespaceName = null, $extends = null, $methods = array()) {
+        return new ClassGenerator($name, $namespaceName, null, $extends, array(), array(), $methods);
     }
 
     /**
@@ -241,6 +223,19 @@ class GenerateService extends AbstractService {
      */
     public function generateMethode($name, $parameters = array(), $flags = null, $body = null) {
         return new MethodGenerator($name, $parameters, $flags, $body);
+    }
+
+    private function executeFileGenerate($path) {
+        if (empty($this->class)) {
+            throw new \Exception('Class is empty');
+        }
+
+        $file = new FileGenerator(
+                array(
+            'classes' => array($this->class),
+                )
+        );
+        $this->saveContentIntoFile($file->generate(), $path);
     }
 
 }

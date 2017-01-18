@@ -32,9 +32,4 @@ return array(
             'ZOR\Controller\Create' => 'ZOR\Controller\CreateController'
         ),
     ),
-   /* 'service_manager' => array(
-          'invokables' => array(
-          'ZOR\Service\Create' => 'ZOR\Service\CreateService',
-          ),
-          ), */
 );

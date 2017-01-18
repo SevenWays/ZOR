@@ -12,6 +12,8 @@ use Zend\ModuleManager\Feature\BootstrapListenerInterface;
 use Zend\ModuleManager\Feature\AutoloaderProviderInterface;
 use Zend\ModuleManager\Feature\ConfigProviderInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\Filter\StaticFilter;
+use Zend\Validator\StaticValidator;
 
 class Module implements ConsoleUsageProviderInterface,
     AutoloaderProviderInterface,
@@ -26,6 +28,14 @@ class Module implements ConsoleUsageProviderInterface,
     public function onBootstrap(EventInterface $e)
     {
         $this->sm = $e->getApplication()->getServiceManager();
+        
+        // get filter and validator manager 
+        $filterManager    = $this->sm->get('FilterManager');
+        $validatorManager = $this->sm->get('ValidatorManager');
+        
+        // add custom filters and validators
+        StaticFilter::setPluginManager($filterManager);
+        StaticValidator::setPluginManager($validatorManager);
     }
 
     public function getConfig()
