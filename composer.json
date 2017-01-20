@@ -22,8 +22,5 @@
             "ZOR\\": "src/"
         }
     },
-     "scripts": {
-        "post-update-cmd": "php -r 'echo \"Test\";' "
-     },
         "bin": ["bin/zor.php"]
 }
