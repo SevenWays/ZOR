@@ -52,16 +52,11 @@ class CreateController extends AbstractActionController {
     protected $_console;
 
     public function createAction() {
-
         $service = new CreateService();
         $filepath = (!empty($this->request->getParam('path'))) ? $this->request->getParam('path') : NULL;
 
         switch ($this->request->getParam('what')) {
-            case 'new':
-                if (empty($this->request->getParam('name'))) {
-                    $this->showAlert(array('error' => array('Project name is empty')));
-                    return;
-                }
+            case 'project':
                 $service->createApplication($filepath);
                 break;
             case 'module':
@@ -128,7 +123,7 @@ class CreateController extends AbstractActionController {
             case 'server':
 
                 $host = (!empty($this->request->getParam('host'))) ? $this->request->getParam('host') : 'localhost';
-                $port = (!empty($this->request->getParam('port'))) ? $this->request->getParam('port') : '3000';
+                $port = (!empty($this->request->getParam('port'))) ? $this->request->getParam('port') : '8080';
                 $path = (!empty($this->request->getParam('path'))) ? $this->request->getParam('path') : APP_ROOT_DIR . '/public';
                 $this->showAlert(array('info' => array('Listening on http://' . $host . ':' . $port)));
                 $this->showAlert(array('info' => array('Document root is ' . $path)));

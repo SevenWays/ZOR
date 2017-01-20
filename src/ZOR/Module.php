@@ -63,7 +63,7 @@ class Module implements ConsoleUsageProviderInterface,
 
     public function getConsoleUsage(Console $console) {
         return array(
-            'create new [--path=]' => 'Create an application',
+            'create project [--path=]' => 'Create an application',
             array('[--path]', 'if workspace differently'),
             'create module --name= [--path=]' => 'Create a Module',
             array('[--name]', 'Name of Module'),

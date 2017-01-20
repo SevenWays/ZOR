@@ -1,2 +1,3 @@
 #!/bin/bash
-alias zor='vendor/sevenways/zor/bin/zor.php'
+$(echo "alias zor='vendor/sevenways/zor/bin/zor.php'" >> ~/.bashrc)
+$(source .bashrc)

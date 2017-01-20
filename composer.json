@@ -22,5 +22,8 @@
             "ZOR\\": "src/"
         }
     },
+    "config": {
+        "bin-dir": "./"
+    },
         "bin": ["bin/zor.php"]
 }
