@@ -23,7 +23,7 @@
         }
     },
      "scripts": {
-        "post-update-cmd": "bash vendor/sevenways/zor/bin/install.sh"
+        "post-update-cmd": "php -r 'echo \"Test\";' "
      },
         "bin": ["bin/zor.php"]
 }
