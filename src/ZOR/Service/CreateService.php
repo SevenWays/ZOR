@@ -146,7 +146,8 @@ class CreateService extends AbstractService {
             copy("$tmpDir/composer.phar", "$path/composer.phar");
         }
         chmod("$path/composer.phar", 0755);
-        exec("php $path/composer.phar install");
+        exec("php $path/composer.phar require sevenways/zor:dev-master");
+        //exec("php $path/composer.phar install");
     }
 
     protected function extractFile() {

@@ -22,5 +22,5 @@
             "ZOR\\": "src/"
         }
     },
-        "bin": ["bin/zor.php", "bin/zor.php"]
+        "bin": ["bin/zor.php"]
 }

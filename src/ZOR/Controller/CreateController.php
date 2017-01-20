@@ -122,6 +122,24 @@ class CreateController extends AbstractActionController {
         $this->showAlert($service->getMessages());
     }
 
+    public function utilsAction() {
+
+        switch ($this->request->getParam('what')) {
+            case 'server':
+
+                $host = (!empty($this->request->getParam('host'))) ? $this->request->getParam('host') : 'localhost';
+                $port = (!empty($this->request->getParam('port'))) ? $this->request->getParam('port') : '3000';
+                $path = (!empty($this->request->getParam('path'))) ? $this->request->getParam('path') : APP_ROOT_DIR . '/public';
+                $this->showAlert(array('info' => array('Listening on http://' . $host . ':' . $port)));
+                $this->showAlert(array('info' => array('Document root is ' . $path)));
+                $this->showAlert(array('info' => array('Press Ctrl-C to quit.')));
+                die(passthru('php -S ' . $host . ':' . $port . ' -t ' . $path));
+                break;
+            default:
+                break;
+        }
+    }
+
     public function showAlert(array $messages) {
         $this->_console = $this->getServiceLocator()->get('console');
         if (!$this->_console instanceof Console) {
