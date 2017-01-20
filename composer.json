@@ -22,8 +22,8 @@
             "ZOR\\": "src/"
         }
     },
-    "config": {
-        "bin-dir": "./"
-    },
+     "scripts": {
+        "post-update-cmd": "bash vendor/sevenways/zor/bin/install.sh"
+     },
         "bin": ["bin/zor.php"]
 }
