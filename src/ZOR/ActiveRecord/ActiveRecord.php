@@ -5,6 +5,8 @@ namespace ZOR\ActiveRecord;
 use Zend\Db\Adapter\Adapter;
 use Zend\Db\Sql\TableIdentifier;
 use Zend\Db\RowGateway\RowGateway;
+use Zend\Filter\StaticFilter;
+use Zend\Validator\StaticValidator;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 
 abstract class ActiveRecord extends RowGateway {
@@ -83,6 +85,12 @@ abstract class ActiveRecord extends RowGateway {
      */
     protected $predicate = null;
     protected $agg_funcs = array("SUM", "AVG", "MAX", "MIN");
+
+    /**
+     * array('field_name' => array('Validator' => array('param1' => true)));
+     * @var array
+     */
+    protected $validates = array();
 
     /**
      * SQL date format
@@ -769,6 +777,19 @@ abstract class ActiveRecord extends RowGateway {
         }
 
         $this->delete();
+    }
+
+    public function isValid() {
+
+        if (!empty($this->validates)) {
+            foreach ($this->validates as $field => $validator) {
+                foreach ($validator as $name => $args) {
+                   $a = StaticValidator::execute($this->data[$field], $name, $args = array());
+                   var_dump(StaticValidator::getPluginManager());
+                   return $a;
+                }
+            }
+        }
     }
 
 }
