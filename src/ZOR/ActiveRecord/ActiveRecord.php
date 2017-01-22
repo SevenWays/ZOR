@@ -29,14 +29,14 @@ abstract class ActiveRecord extends RowGateway {
 
     /**
      * Use if contains forange key to many Tables
-     * For example:  array('Person' => array('class'=>'Application\Model\Person'));
+     * For example:  array('ModelName' => array('class'=>'Application\Model\ModelName', 'through' => 'Item')); //through is using if n:n relationship
      * @var array
      */
     protected $hasMany = array();
 
     /**
      * Use if contains forange key to parent Table
-     * For example: array('Department' => array('class'=>'Application\Model\Department', 'foreign_key_attribute' => 'dep_id', 'foreign_key' => null)
+     * For example: array('ModelName' => array('class'=>'Application\Model\ModelName', 'foreign_key_attribute' => 'model_name_id', 'foreign_key' => null)
      * @var array
      */
     protected $belongsTo = array();
@@ -421,10 +421,6 @@ abstract class ActiveRecord extends RowGateway {
     /**
      * Use given predicate directly
      *
-     * Contrary to {@link addPredicate()} this method respects formerly set
-     * AND / OR combination operator, thus allowing generic predicates to be
-     * used fluently within where chains as any other concrete predicate.
-     *
      * @param  PredicateInterface $predicate
      * @return Predicate
      */
@@ -571,11 +567,6 @@ abstract class ActiveRecord extends RowGateway {
         return $this;
     }
 
-    /* public function __invoke() {
-      $this->executeStatement($this->getSelect());
-      return $this;
-      } */
-
     public function __get($name) {
         $this->execute();
         return parent::__get($name);
@@ -636,7 +627,7 @@ abstract class ActiveRecord extends RowGateway {
             foreach ($this->models as $key => $value) {
                 if (key_exists($key, $this->hasMany) && !empty($this->hasMany[$key]['through'])) {
                     $this->saveMany($this->hasMany[$key]['through'], $value);
-                }  else {
+                } else {
                     throw new \Exception("Relationship not exist to $key");
                 }
             }
@@ -651,13 +642,14 @@ abstract class ActiveRecord extends RowGateway {
     }
 
     protected function saveMany($through, $model) {
-            if (key_exists($through, $this->hasMany)){
-                 $class = new $this->hasMany[$through]['class']($this->getDbAdapter());
-                 $class->{$class->belongsTo[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
-                 $class->{$class->belongsTo[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
-                 $class->save();
-            }
+        if (key_exists($through, $this->hasMany)) {
+            $class = new $this->hasMany[$through]['class']($this->getDbAdapter());
+            $class->{$class->belongsTo[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
+            $class->{$class->belongsTo[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
+            $class->save();
+        }
     }
+
     /**
      * Return true if the record is new, and not saved
      * @return bool
@@ -708,7 +700,11 @@ abstract class ActiveRecord extends RowGateway {
 
         if (!empty($this->hasMany)) {
             if (key_exists($func, $this->hasMany)) {
-                return $this->create_many($func);
+                if (key_exists("through", $this->hasMany[$func])) {
+                    return $this->many_to_many($func, $this->hasMany[$func]['through']);
+                } else {
+                    return $this->one_to_many($func);
+                }
             }
         }
         if (!empty($this->belongsTo)) {
@@ -727,15 +723,28 @@ abstract class ActiveRecord extends RowGateway {
         return $class->find($this->{$this->belongsTo[$belongTo]['foreign_key_attribute']});
     }
 
+    protected function many_to_many($table, $through) {
+        $keys = null;
+        $result = $this->one_to_many($through)->all();
+        foreach ($result as $value) {
+            $keys[] = $value->{$value->belongsTo[$table]['foreign_key_attribute']};
+        }
+        $class = $this->one_to_many($table);
+        $class->in($class->primaryKeyColumn[0], $keys);
+        return $class->execute();
+    }
+
     /**
      * 
      * @param type $table
      * @return type
      */
-    protected function create_many($table) {
+    protected function one_to_many($table) {
         $class = new $this->hasMany[$table]['class']($this->getDbAdapter());
-        $classname = @end(explode("\\", get_called_class()));
-        $class->belongsTo[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
+        if (!empty($class->belongsTo)) {
+            $classname = @end(explode("\\", get_called_class()));
+            $class->belongsTo[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
+        }
         return $class;
     }
 
@@ -745,7 +754,7 @@ abstract class ActiveRecord extends RowGateway {
     public function destroy() {
         if (!empty($this->hasMany)) {
             foreach ($this->hasMany as $key => $value) {
-                $class = $this->create_many($key);
+                $class = $this->one_to_many($key);
                 $result = $class->all();
                 if (!empty($result)) {
                     if (is_array($result)) {
