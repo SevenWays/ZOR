@@ -91,6 +91,7 @@ abstract class ActiveRecord extends RowGateway {
      * @var array
      */
     protected $validates = array();
+    protected $filters = array();
 
     /**
      * SQL date format
@@ -144,8 +145,8 @@ abstract class ActiveRecord extends RowGateway {
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function build(array $params) {
-        $params = array_merge($this->data, $params);
-        $this->populate($params);
+        $this->populate(array_merge($this->data, $params));
+        $this->filterAll();
         return $this;
     }
 
@@ -155,9 +156,7 @@ abstract class ActiveRecord extends RowGateway {
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function update_attributes(array $params) {
-        foreach ($params as $key => $value) {
-            $this->$key = $value;
-        }
+        $this->build($params);
         $this->save();
         return $this;
     }
@@ -585,7 +584,7 @@ abstract class ActiveRecord extends RowGateway {
         if ($this->offsetExists($name)) {
             $this->_changed = true;
         }
-        parent::__set($name, $value);
+        parent::__set($name, $this->filterIt($name, $value));
     }
 
     /**
@@ -622,6 +621,12 @@ abstract class ActiveRecord extends RowGateway {
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function save() {
+        try {
+            $this->isValid();
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+
         if (!empty($this->belongsTo)) {
             foreach ($this->belongsTo as $key => $value) {
                 if (!empty($value['foreign_key'])) {
@@ -784,9 +789,30 @@ abstract class ActiveRecord extends RowGateway {
         if (!empty($this->validates)) {
             foreach ($this->validates as $field => $validator) {
                 foreach ($validator as $name => $args) {
-                   $a = StaticValidator::execute($this->data[$field], $name, $args = array());
-                   var_dump(StaticValidator::getPluginManager());
-                   return $a;
+                    $status = StaticValidator::execute($this->data[$field], $name, $args);
+                    if ($status) {
+                        return TRUE;
+                    } else {
+                        throw new \Exception("The Field $field is not valid");
+                    }
+                }
+            }
+        }
+    }
+
+    public function filterIt($field, $value) {
+        if (key_exists($field, $this->filters)) {
+            foreach ($this->filter[$field] as $name => $args) {
+                return StaticFilter::execute($value, $name, $args);
+            }
+        }
+    }
+
+    public function filterAll() {
+        if (!empty($this->filters)) {
+            foreach ($this->filters as $field => $filter) {
+                foreach ($filter as $name => $args) {
+                    $this->data[$field] = StaticFilter::execute($this->data[$field], $name, $args);
                 }
             }
         }
