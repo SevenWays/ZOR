@@ -92,6 +92,7 @@ abstract class ActiveRecord extends RowGateway {
      */
     protected $validates = array();
     protected $filters = array();
+    protected $messages = array();
 
     /**
      * SQL date format
@@ -621,10 +622,8 @@ abstract class ActiveRecord extends RowGateway {
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function save() {
-        try {
-            $this->isValid();
-        } catch (\Exception $e) {
-            return $e->getMessage();
+        if (!$this->isValid()) {
+            return false;
         }
 
         if (!empty($this->belongsTo)) {
@@ -789,33 +788,48 @@ abstract class ActiveRecord extends RowGateway {
         if (!empty($this->validates)) {
             foreach ($this->validates as $field => $validator) {
                 foreach ($validator as $name => $args) {
-                    $status = StaticValidator::execute($this->data[$field], $name, $args);
+
+                    $plugins = StaticValidator::getPluginManager();
+                    $validator = $plugins->get($name, $args);
+                    $status = $validator->isValid($this->data[$field]);
+
                     if ($status) {
                         return TRUE;
                     } else {
-                        throw new \Exception("The Field $field is not valid");
+                        foreach ($validator->getMessages() as $message) {
+                            $this->messages[$field][] = $message;
+                        }
+                        return FALSE;
                     }
                 }
             }
         }
     }
 
-    public function filterIt($field, $value) {
+    protected function filterIt($field, $value) {
         if (key_exists($field, $this->filters)) {
-            foreach ($this->filter[$field] as $name => $args) {
-                return StaticFilter::execute($value, $name, $args);
+            foreach ($this->filters[$field] as $name => $args) {
+                return $this->filter($value, $name, $args);
             }
         }
     }
 
-    public function filterAll() {
+    protected function filterAll() {
         if (!empty($this->filters)) {
             foreach ($this->filters as $field => $filter) {
                 foreach ($filter as $name => $args) {
-                    $this->data[$field] = StaticFilter::execute($this->data[$field], $name, $args);
+                    $this->data[$field] = $this->filter($this->data[$field], $name, $args);
                 }
             }
         }
+    }
+
+    public function filter($value, $name_of_filter, $args = array()) {
+        return StaticFilter::execute($value, $name_of_filter, $args);
+    }
+
+    public function getMessages() {
+        return $this->messages;
     }
 
 }
