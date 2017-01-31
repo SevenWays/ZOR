@@ -5,6 +5,7 @@ namespace ZOR;
 define('ROOTDIR', dirname(__DIR__));
 
 use Zend\Console\Adapter\AdapterInterface as Console;
+use Zend\Db\Adapter\AdapterAwareInterface;
 use Zend\EventManager\EventInterface;
 use Zend\ModuleManager\Feature\ConsoleUsageProviderInterface;
 use Zend\ModuleManager\Feature\ConsoleBannerProviderInterface;
@@ -15,42 +16,43 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Filter\StaticFilter;
 use Zend\Validator\StaticValidator;
 
-class Module implements ConsoleUsageProviderInterface,
-    AutoloaderProviderInterface,
-    ConfigProviderInterface,
-    ConsoleBannerProviderInterface,
-    BootstrapListenerInterface{
- /**
-     * @var ServiceLocatorInterface
-     */
-    protected $sm;
+class Module implements ConsoleUsageProviderInterface, AutoloaderProviderInterface, ConfigProviderInterface, ConsoleBannerProviderInterface, BootstrapListenerInterface {
 
-    public function onBootstrap(EventInterface $e)
-    {
-        $this->sm = $e->getApplication()->getServiceManager();
-        
+    public function onBootstrap(EventInterface $e) {
+        $sm = $e->getApplication()->getServiceManager();
+
         // get filter and validator manager 
-        $filterManager    = $this->sm->get('FilterManager');
-        $validatorManager = $this->sm->get('ValidatorManager');
-        
+        $filterManager = $sm->get('FilterManager');
+        $validatorManager = $sm->get('ValidatorManager');
+
         // add custom filters and validators
         StaticFilter::setPluginManager($filterManager);
         StaticValidator::setPluginManager($validatorManager);
     }
 
-    public function getConfig()
-    {
+    public function getConfig() {
         return include __DIR__ . '/../../config/module.config.php';
     }
 
-    public function getAutoloaderConfig()
-    {
+    public function getAutoloaderConfig() {
         return array(
             'Zend\Loader\StandardAutoloader' => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__,
                 ),
             ),
+        );
+    }
+
+    function getServiceConfig() {
+        return array(
+            'initializers' => array(
+                'service' => function($service, ServiceLocatorInterface $serviceLocator) {
+                    if ($service instanceof AdapterAwareInterface) {
+                        $service->setDbAdapter($serviceLocator->get("Zend\Db\Adapter\Adapter"));
+                    }
+                }
+            )
         );
     }
 
@@ -72,17 +74,17 @@ class Module implements ConsoleUsageProviderInterface,
             array('[--link]', 'Zip file on GitHub'),
             array('[--path]', 'if workspace differently'),
             'generate ctrl --name= [--module=] [--actions=]' => 'Generate a Controller',
-             array('[--name]', 'Name of Controller'),
+            array('[--name]', 'Name of Controller'),
             array('[--module]', 'Name of Module. Default:"Application"'),
-             array('[--actions]', 'Names of Actions. Default: "index"'),
+            array('[--actions]', 'Names of Actions. Default: "index"'),
             'generate act [--ctrl=] [--module=] [--actions=]' => 'Generate the Actions for a Controller',
             array('[--cname]', 'Name of Controller'),
             array('[--module]', 'Name of Module. Default:"Application"'),
             'generate model [--name=] [--module=] [--columns=]' => 'Generate a Model with ActiveRecords',
             array('[--name]', 'Name of Model'),
             array('[--module]', 'Name of Module. Default:"Application"'),
-             array('[--columns]', 'A string of attributs'),
-            );
+            array('[--columns]', 'A string of attributs'),
+        );
     }
 
 }
