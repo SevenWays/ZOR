@@ -3,13 +3,14 @@
 namespace ZOR\ActiveRecord;
 
 use Zend\Db\Adapter\Adapter;
+use Zend\Db\Sql\Sql;
 use Zend\Db\Sql\TableIdentifier;
-use Zend\Db\RowGateway\RowGateway;
+use Zend\Db\RowGateway\AbstractRowGateway;
 use Zend\Filter\StaticFilter;
 use Zend\Validator\StaticValidator;
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\Db\Adapter\AdapterAwareInterface;
 
-abstract class ActiveRecord extends RowGateway {
+abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareInterface {
 
     /**
      * Default name of primaryKey
@@ -71,7 +72,7 @@ abstract class ActiveRecord extends RowGateway {
      * Return result of Statment
      * @var mix
      */
-    protected $_result = null;
+    protected $_result = array();
 
     /**
      * Did execute of Statment 
@@ -103,22 +104,30 @@ abstract class ActiveRecord extends RowGateway {
      * 
      * @param \Zend\Db\Adapter\Adapter $adapter
      */
-    public function __construct($adapter) {
-        $table = new TableIdentifier($this->table);
-        $this->setDbAdapter($adapter);
-        parent::__construct($this->primaryKeyColumn, $table, $this->getDbAdapter());
+    public function __construct($adapter = null) {
 
+        if ($adapter) {
+            $this->setDbAdapter($adapter);
+        }
+
+        return $this;
+    }
+
+    public function initialize() {
+        $this->sql = new Sql($this->getDbAdapter(), $this->table);
         if (is_null($this->predicate)) {
             $this->predicate = $this->getSelect()->where;
         }
+        parent::initialize();
     }
 
     /**
      * 
      * @param \Zend\Db\Adapter\AdapterInterface $adapter
      */
-    public function setDbAdapter(\Zend\Db\Adapter\AdapterInterface $adapter) {
+    public function setDbAdapter(Adapter $adapter) {
         $this->adapter = $adapter;
+        $this->initialize();
     }
 
     /**
@@ -185,7 +194,9 @@ abstract class ActiveRecord extends RowGateway {
      * @return array
      */
     public function all() {
-        return $this->execute();
+        $this->execute();
+
+        return $this->_result;
     }
 
     /**
@@ -598,7 +609,7 @@ abstract class ActiveRecord extends RowGateway {
         if ($this->affectedRows == 1) {
             $rowData = $result->current();
             $this->populate($rowData, true);
-            $this->_result = $this;
+            $this->_result[] = $this;
         } elseif ($this->affectedRows > 1) {
             $class = get_called_class();
             foreach ($result as $value) {
@@ -796,9 +807,7 @@ abstract class ActiveRecord extends RowGateway {
                     if ($status) {
                         return TRUE;
                     } else {
-                        foreach ($validator->getMessages() as $message) {
-                            $this->messages[$field][] = $message;
-                        }
+                        $this->messages = array_merge($this->messages, $validator->getMessages());
                         return FALSE;
                     }
                 }
@@ -830,6 +839,10 @@ abstract class ActiveRecord extends RowGateway {
 
     public function getMessages() {
         return $this->messages;
+    }
+
+    public function __toString() {
+        return get_class($this);
     }
 
 }
