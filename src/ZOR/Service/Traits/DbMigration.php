@@ -123,5 +123,4 @@ trait DbMigration {
             }
         }
     }
-
 }
