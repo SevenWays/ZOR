@@ -39,7 +39,6 @@
 
 namespace ZOR\Controller;
 
-use Zend\Mvc\Controller\AbstractActionController;
 use Zend\Console\Adapter\AdapterInterface as Console;
 use Zend\Console\Exception\RuntimeException;
 use Zend\Console\ColorInterface as Color;
@@ -50,6 +49,7 @@ class CreateController extends AbstractActionController {
 
     protected $_service;
     protected $_console;
+    protected $before_action = array('getGeneratorService' => array('generate', 'utils'));
 
     public function createAction() {
         $service = new CreateService();
@@ -83,7 +83,6 @@ class CreateController extends AbstractActionController {
     }
 
     public function generateAction() {
-        $service = new GenerateService();
         $module = (!empty($this->request->getParam('module'))) ? $this->request->getParam('module') : 'application';
         $actionstring = (empty($this->request->getParam('actions'))) ? "index" : $this->request->getParam('actions');
         $actions = explode(",", $actionstring);
@@ -94,7 +93,7 @@ class CreateController extends AbstractActionController {
                     $this->showAlert(array('error' => array('Controller name is empty!')));
                     return;
                 }
-                $service->generateController($this->request->getParam('name'), $module, $actions);
+                $this->_service->generateController($this->request->getParam('name'), $module, $actions);
                 break;
             case 'act':
                 if (empty($this->request->getParam('cname'))) {
@@ -105,20 +104,24 @@ class CreateController extends AbstractActionController {
                     $this->showAlert(array('error' => array('Actions is empty')));
                     return;
                 }
-                $service->generateActions($actions, $module, $this->request->getParam('cname'));
+                $this->_service->generateActions($actions, $module, $this->request->getParam('cname'));
                 break;
             case 'model':
                 $dbadapter = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
-                $service->generateModel($this->request->getParam('name'), $module, $this->request->getParam('columns'), $dbadapter);
+                $this->_service->generateModel($this->request->getParam('name'), $module, $this->request->getParam('columns'), $dbadapter);
+                break;
+            case 'migration':
+                $this->_service->generateMigration($this->request->getParam('name'), $this->request->getParam('columns'));
+                break;
             default:
                 break;
         }
 
-        $this->showAlert($service->getMessages());
+        $this->showAlert($this->_service->getMessages());
     }
 
     public function utilsAction() {
-
+        $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
         switch ($this->request->getParam('what')) {
             case 'server':
 
@@ -130,9 +133,16 @@ class CreateController extends AbstractActionController {
                 $this->showAlert(array('info' => array('Press Ctrl-C to quit.')));
                 die(passthru('php -S ' . $host . ':' . $port . ' -t ' . $path));
                 break;
+            case 'migrate':
+                $this->_service->runMigration('migrate', $db);
+                break;
+            case 'rollback':
+                $this->_service->runMigration('rollback', $db);
+                break;
             default:
                 break;
         }
+          $this->showAlert($this->_service->getMessages());
     }
 
     public function showAlert(array $messages) {
@@ -154,7 +164,7 @@ class CreateController extends AbstractActionController {
                     $color = Color::GREEN;
                     break;
                 default:
-                    $color = Color::WHITE;
+                    $color = Color::YELLOW;
                     break;
             }
 
@@ -162,6 +172,10 @@ class CreateController extends AbstractActionController {
                 $this->_console->writeLine($message, $color);
             }
         }
+    }
+
+    protected function getGeneratorService() {
+        $this->_service = new GenerateService();
     }
 
 }

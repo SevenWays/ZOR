@@ -42,11 +42,14 @@ namespace ZOR\Service;
 use Zend\Code\Generator\ClassGenerator;
 use Zend\Code\Generator\MethodGenerator;
 use Zend\Code\Generator\FileGenerator;
-use ZOR\Db\Sql\Ddl\CreateNewTable;
 use Zend\Db\Adapter\Adapter;
 
-class GenerateService extends AbstractService {
 
+class GenerateService extends AbstractService {
+    /**
+     * Included Traits
+     */
+    use Traits\DbMigration;
     protected $viewContent = "<strong>Module:</strong>        %s &raquo;
                                 <strong>Controller:</strong>    %s &raquo;
                                 <strong>Action:</strong>        %s";
@@ -128,7 +131,7 @@ class GenerateService extends AbstractService {
         }
     }
 
-    public function generateModel($name, $module, $columns, $dbadapter) {
+    public function generateModel($name, $module, $columns) {
         $this->normalizeNames($module);
         $modelName = $this->underscoreToCamelCase($name);
         $namespaceName = $this->moduleName . '\Model';
@@ -139,12 +142,12 @@ class GenerateService extends AbstractService {
             return;
         }
 
-        $ct = $this->createTable(strtolower($name), $columns, $dbadapter);
+        $this->generateMigration('Create' . $modelName, $columns);
 
         $this->class = $this->generateClass($modelName, $namespaceName, 'ActiveRecord');
         $this->class->addUse('ZOR\ActiveRecord\ActiveRecord');
-        $this->class->addProperty('primaryKeyColumn', $ct->getPrimaryKeyColumn())
-                ->addProperty('table', $ct->getTableName());
+        $this->class->addProperty('primaryKeyColumn', 'id')
+                ->addProperty('table', $modelName);
 
         $this->executeFileGenerate($modelPath);
 
@@ -173,22 +176,7 @@ class GenerateService extends AbstractService {
         }
     }
 
-    /*
-      order,id:integer{11}:unsigned:notnull::auto_increment:primerykey,uniqid:varchar{255}::null:aaa::uniquekey,amount:float{10.4}::notnull:::,created_at:timestamp::null::on_update::foreignkey{name.referenceTable.referenceColumn.onDeleteRule.onUpdateRule}
-     */
-
-    protected function createTable($name, $columns, $dbadapter) {
-        try {
-
-            $ct = new CreateNewTable($dbadapter);
-            $ct->createTableFromString($name, $columns);
-            $this->setMessage($ct->createTable());
-            return $ct;
-        } catch (Exception $exc) {
-            $this->setMessage($exc->getTraceAsString());
-        }
-    }
-
+   
     /**
      * Implement sprintf function
      * 
