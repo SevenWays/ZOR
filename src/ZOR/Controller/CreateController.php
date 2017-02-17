@@ -73,6 +73,13 @@ class CreateController extends AbstractActionController {
                 }
                 $service->createForeignModule($this->request->getParam('link'), $filepath);
                 break;
+            case 'database':
+                if (empty($this->request->getParam('driver')) || empty($this->request->getParam('name'))) {
+                    $this->showAlert(array('error' => array('Database Adapter or Name is empty')));
+                    return;
+                }
+                $service->createDBConnect($this->request->getParam('driver'), $this->request->getParam('name'), $this->request->getParam('username'), $this->request->getParam('password'));
+                break;
             default:
                 break;
         }
@@ -142,7 +149,7 @@ class CreateController extends AbstractActionController {
             default:
                 break;
         }
-          $this->showAlert($this->_service->getMessages());
+        $this->showAlert($this->_service->getMessages());
     }
 
     public function showAlert(array $messages) {
