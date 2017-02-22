@@ -71,7 +71,7 @@ class Module implements ConsoleUsageProviderInterface, AutoloaderProviderInterfa
             array('[--name]', 'Name of Module'),
             array('[--path]', 'if workspace differently'),
             'create fmodule --link= [--path=]' => 'Create a foreign module from GitHub zip link',
-            array('[--link]', 'Zip file on GitHub'),
+            array('[--require]', 'Package name from packagist.org'),
             array('[--path]', 'if workspace differently'),
             'generate ctrl --name= [--module=] [--actions=]' => 'Generate a Controller',
             array('[--name]', 'Name of Controller'),

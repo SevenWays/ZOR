@@ -63,7 +63,9 @@ class CreateService extends AbstractService {
         }
 
         $this->installPhar($this->getAppRootDir());
-        exec("php " . $this->getAppRootDir() . "/composer.phar create-project -sdev zendframework/skeleton-application:2.5.0 ". $this->getAppRootDir());
+        exec("php " . $this->getAppRootDir() . "/composer.phar create-project -sdev zendframework/skeleton-application:2.5.0 ");
+        exec("cp -r " . $this->getAppRootDir() . "/skeleton-application/* " . $this->getAppRootDir());
+        exec("rm -r " . $this->getAppRootDir() . "/skeleton-application");
         exec("php " . $this->getAppRootDir() . "/composer.phar --working-dir=" . $this->getAppRootDir() . " require sevenways/zor:dev-master");
         $this->includeModule('ZOR');
         $this->createDBConnect();
@@ -79,36 +81,29 @@ class CreateService extends AbstractService {
             return FALSE;
         }
 
-        $this->_filename = $this->getModuleName(self::MODULE_SKELETON_URL) . ".zip";
+        $this->_filename = "ZendSkeletonModule.zip";
 
         $this->create(self::MODULE_SKELETON_URL, $this->getAppRootDir() . "/module/" . $this->moduleName);
         $this->includeModule($this->moduleName);
         $this->setMessage("Create module " . $this->moduleName . " is completed");
     }
 
-    public function createForeignModule($require, $filepath) {
+    public function createForeignModule($require, $filepath = null) {
 
-        $this->setAppRootDir($filepath);       
+        $this->setAppRootDir($filepath);
         $array = explode('/', $require);
         $modulename = $this->dashToCamelCase(array_pop($array));
-        
 
         if ($this->moduleExist($modulename)) {
             $this->setMessage('Module is already ' . $modulename . 'exist', 'error');
             return FALSE;
         }
 
-        if ($this->installPhar($filepath)) {
-            exec("php $filepath/composer.phar --working-dir=" . $filepath . " require " . $require);
+        if ($this->installPhar($this->getAppRootDir())) {
+            exec("php " . $this->getAppRootDir() . "/composer.phar --working-dir=" . $this->getAppRootDir() . " require " . $require);
         }
         $this->includeModule($modulename);
         $this->setMessage("Create module " . $modulename . " is completed");
-    }
-
-    private function getModuleName($param) {
-        $array = explode('/', $param);
-        $c = count($array) - 3;
-        return $array[$c];
     }
 
     protected function create($link, $install_dir) {
