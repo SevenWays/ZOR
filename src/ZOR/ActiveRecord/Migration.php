@@ -38,21 +38,25 @@ abstract class Migration {
     private $drop_columns = array();
     private $constraints = array();
     private $methods = array('change', 'up', 'down');
-    private $db;
-    protected $migrations = APP_ROOT_DIR . "/data/database/migrations.php";
+    private $dbAdapter = null;
+    protected $migrations = __DIR__ . "/migrations.php";
     private $migrationName = null;
     private $migrationID = null;
-    
-    function getMigrations() {
-        return $this->migrations . "//migrations.php";
+
+    function setPathToConfigFile($path) {
+        $this->migrations = $path;
     }
 
-    function setMigrationsPath($migrations) {
-        $this->migrations = $migrations;
+    public function setAdapter(Adapter $dbAdapter) {
+        $this->dbAdapter = $dbAdapter;
     }
 
-        public function setAdapter(Adapter $db) {
-        $this->db = $db;
+    public function getAdapter() {
+        if (is_null($this->dbAdapter)) {
+            throw new Exception("Database Adapter is empty");
+        } else {
+            return $this->dbAdapter;
+        }
     }
 
     public function isMigrated() {
@@ -103,7 +107,8 @@ abstract class Migration {
             $this->appendConstraint();
         }
 
-        echo $this->class->getSqlString(new \Zend\Db\Adapter\Platform\Mysql());
+        $this->getAdapter()->query($this->class->getSqlString($this->getAdapter()->getPlatform()), Adapter::QUERY_MODE_EXECUTE);
+        echo $this->class->getSqlString($this->getAdapter()->getPlatform());
     }
 
     private function setDefaultColumns() {

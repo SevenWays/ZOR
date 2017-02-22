@@ -19,7 +19,7 @@ trait DbMigration {
 
 
     function getMigrationsPath() {
-        return $this->migration_path;
+        return self::migration_path;
     }
 
     function setMigrationsPath($migration_path=self::migration_path) {
@@ -126,6 +126,7 @@ trait DbMigration {
             $class_name = '\\' . $matches[2][0];
             $a = new $class_name();
             $a->setAdapter($db);
+            $a->setPathToConfigFile($this->getMigrationsPath()."/../migrations.php");
 
 
             if ($type === 'migrate') {
