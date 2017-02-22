@@ -42,8 +42,16 @@ abstract class Migration {
     protected $migrations = APP_ROOT_DIR . "/data/database/migrations.php";
     private $migrationName = null;
     private $migrationID = null;
+    
+    function getMigrations() {
+        return $this->migrations . "//migrations.php";
+    }
 
-    public function setAdapter(Adapter $db) {
+    function setMigrationsPath($migrations) {
+        $this->migrations = $migrations;
+    }
+
+        public function setAdapter(Adapter $db) {
         $this->db = $db;
     }
 

@@ -62,8 +62,9 @@ class CreateService extends AbstractService {
             return FALSE;
         }
 
-        $this->_filename = $this->getModuleName(self::APPLICATION_SKELETON_URL) . ".zip";
-        $this->create(self::APPLICATION_SKELETON_URL, $this->getAppRootDir());
+        $this->installPhar($this->getAppRootDir());
+        exec("php " . $this->getAppRootDir() . "/composer.phar create-project -sdev zendframework/skeleton-application:2.5.0 ". $this->getAppRootDir());
+        exec("php " . $this->getAppRootDir() . "/composer.phar --working-dir=" . $this->getAppRootDir() . " require sevenways/zor:dev-master");
         $this->includeModule('ZOR');
         $this->createDBConnect();
         $this->setMessage("Create Application is completed");
@@ -85,19 +86,21 @@ class CreateService extends AbstractService {
         $this->setMessage("Create module " . $this->moduleName . " is completed");
     }
 
-    public function createForeignModule($gitlink, $filepath) {
-        $this->setAppRootDir($filepath);
-        $modulename = $this->getModuleName($gitlink);
+    public function createForeignModule($require, $filepath) {
+
+        $this->setAppRootDir($filepath);       
+        $array = explode('/', $require);
+        $modulename = $this->dashToCamelCase(array_pop($array));
+        
 
         if ($this->moduleExist($modulename)) {
             $this->setMessage('Module is already ' . $modulename . 'exist', 'error');
             return FALSE;
         }
 
-
-        $this->_filename = $modulename . ".zip";
-        $filepath = $this->getAppRootDir() . "/vendor/" . $modulename;
-        $this->create($gitlink, $filepath);
+        if ($this->installPhar($filepath)) {
+            exec("php $filepath/composer.phar --working-dir=" . $filepath . " require " . $require);
+        }
         $this->includeModule($modulename);
         $this->setMessage("Create module " . $modulename . " is completed");
     }
@@ -113,7 +116,6 @@ class CreateService extends AbstractService {
         if ($this->downloadFromGit($link)) {
             if ($this->extractFile()) {
                 $this->recurse_copy($this->_extractedSkeleton, $install_dir);
-                $this->installPhar($install_dir);
             }
         }
     }
@@ -146,8 +148,7 @@ class CreateService extends AbstractService {
             copy("$tmpDir/composer.phar", "$path/composer.phar");
         }
         chmod("$path/composer.phar", 0755);
-        exec("php $path/composer.phar require sevenways/zor:dev-master");
-        //exec("php $path/composer.phar install");
+        return true;
     }
 
     protected function extractFile() {
@@ -244,23 +245,45 @@ class CreateService extends AbstractService {
         }
     }
 
-    public function createDBConnect() {
+    public function createDBConnect($driver = null, $database = null, $username = null, $password = null) {
+
+        if ($driver == null || strtolower($driver) == 'sqlite') {
+            $this->createSQLiteDbConnect($database);
+        } else {
+            $config = array(
+                'driver' => $driver,
+                'database' => $database,
+                'username' => $username,
+                'password' => $username
+            );
+            $this->setDBAdapterConfig($config);
+        }
+    }
+
+    protected function createSQLiteDbConnect($database = "sqlite") {
+        $dbFile = $this->getAppRootDir() . "/data/database/" . $database . ".db";
+        $this->saveContentIntoFile("", $dbFile);
+        chmod($dbFile, 0666);
+        chgrp($dbFile, "www-data");
+        chgrp(dirname($dbFile), "www-data");
+
+        $config = array(
+            'driver' => 'Pdo_Sqlite',
+            'database' => $dbFile
+        );
+
+        $this->setDBAdapterConfig($config);
+    }
+
+    protected function setDBAdapterConfig($config) {
         $globalConfigFile = $this->getAppRootDir() . "/config/autoload/global.php";
-        $dbFile = $this->getAppRootDir() . "/data/database/sqlite.db";
+
         if (file_exists($globalConfigFile)) {
-
-            $this->saveContentIntoFile("", $dbFile);
-
-            chmod($dbFile, 0666);
-            chgrp($dbFile, "www-data");
-            chgrp(dirname($dbFile), "www-data");
 
             $global_config = require $globalConfigFile;
 
-            $global_config['db'] = array(
-                'driver' => 'Pdo_Sqlite',
-                'database' => $dbFile
-            );
+            $global_config['db'] = $config;
+
             $global_config['service_manager'] = array(
                 'factories' => array(
                     'Zend\Db\Adapter\Adapter'

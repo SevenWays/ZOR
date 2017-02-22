@@ -55,15 +55,18 @@ abstract class AbstractService {
     }
 
     public function saveContentIntoFile($content, $path, $mode = 0777) {
-        $dir = dirname($path);
-        if (!file_exists($dir)) {
-            mkdir($dir, $mode, true);
-        }
+        $this->mkdir(dirname($path),$mode);
 
         if (file_put_contents($path, $content) !== FALSE) {
             $this->setMessage('The file ' . $path . ' was created', 'info');
         } else {
             $this->setMessage('An error has occurred!', 'error');
+        }
+    }
+
+    protected function mkdir($pathname, $mode = 0777, $recursive = true) {
+        if (!file_exists($pathname)) {
+            mkdir($pathname, $mode, $recursive);
         }
     }
 
@@ -74,8 +77,12 @@ abstract class AbstractService {
     protected function camelCaseToDash($string) {
         return strtolower(StaticFilter::execute($string, 'WordCamelCaseToDash'));
     }
+    
+    protected function dashToCamelCase($string) {
+        return StaticFilter::execute($string, 'WordDashToCamelCase');
+    }
 
-    protected function normalizeNames($module=null, $controller=null) {
+    protected function normalizeNames($module = null, $controller = null) {
         if (empty($module) && empty($controller)) {
             return;
         }
@@ -84,7 +91,7 @@ abstract class AbstractService {
         }
         if (empty($this->moduleName)) {
             $this->moduleName = $this->underscoreToCamelCase($module);
-        } 
+        }
         if (empty($this->modulePath)) {
             $this->modulePath = $this->getAppRootDir() . '/module/' . $this->moduleName;
         }
@@ -92,7 +99,7 @@ abstract class AbstractService {
             $this->controllerPath = $this->modulePath . '/src/' . $this->moduleName . '/Controller/' . $this->controllerName . 'Controller.php';
         }
         if (empty($this->viewFolder)) {
-            $this->viewFolder = $this->modulePath . '/view/' . $this->camelCaseToDash($this->moduleName)  . '/' . $this->camelCaseToDash($this->controllerName);
+            $this->viewFolder = $this->modulePath . '/view/' . $this->camelCaseToDash($this->moduleName) . '/' . $this->camelCaseToDash($this->controllerName);
         }
     }
 

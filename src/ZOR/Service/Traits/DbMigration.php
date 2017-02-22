@@ -15,7 +15,17 @@ namespace ZOR\Service\Traits;
  */
 trait DbMigration {
 
-    protected $migration_path = APP_ROOT_DIR . '/data/database/migrate';
+    protected static $migration_path = APP_ROOT_DIR . '/data/database/migrations';
+
+
+    function getMigrationsPath() {
+        return $this->migration_path;
+    }
+
+    function setMigrationsPath($migration_path=self::migration_path) {
+        $this->mkdir($migration_path);
+        $this->migration_path = $migration_path;
+    }
 
     public function generateMigration($name, $columns) {
 
@@ -29,7 +39,11 @@ trait DbMigration {
             foreach ($array as $value) {
                 $args = explode(':', $value);
 
-                preg_match_all('/(\w+)|{(\S+)}/', $args[1], $match);
+                if (!is_null($args[0]))
+                    throw new Exception("Columnname is empty");
+
+                $type_match = (!is_null($args[1])) ? $args[1] : null;
+                preg_match_all('/(\w+)|{(\S+)}/', $type_match, $match);
 
                 $type = (isset($match[1][0])) ? ucfirst($match[1][0]) : null;
                 $length = (isset($match[2][1])) ? $match[2][1] : null;
@@ -50,7 +64,7 @@ trait DbMigration {
         $this->class->addUse('ZOR\ActiveRecord\Migration');
         $this->class->addMethod('change', array(), MethodGenerator::FLAG_PUBLIC, $body);
 
-        $this->executeFileGenerate($this->migration_path . '/' . time() . '_' . $name . '.php');
+        $this->executeFileGenerate($this->getMigrationsPath() . '/' . time() . '_' . $name . '.php');
 
         $this->setMessage('Migration ' . $name . ' created');
     }
@@ -81,10 +95,9 @@ trait DbMigration {
     }
 
     private function hasMigrations($name = null) {
-        $migrations = scandir($this->migration_path);
+        $migrations = scandir($this->getMigrationsPath());
         foreach ($migrations as $file) {
-            preg_match_all('/(\d+)_(\S+)(.php)/', $file, $matches);
-            if ($matches[2][0] == $name) {
+            if (preg_match_all('/(\d+)_(\S+)(.php)/', $file, $matches) && $matches[2][0] == $name) {
                 $this->setMessage('Migration ' . $name . ' already exist', 'error');
                 return true;
             }
@@ -100,7 +113,7 @@ trait DbMigration {
     public function runMigration($type, $db = null) {
         $rb = false;
         $sort = ($type == 'rollback') ? 1 : 0;
-        $migrations = scandir($this->migration_path, $sort);
+        $migrations = scandir($this->getMigrationsPath(), $sort);
 
         foreach ($migrations as $file) {
             if ($file == "." || $file == "..")
@@ -108,7 +121,7 @@ trait DbMigration {
 
             preg_match_all('/(\d+)_(\S+)(.php)/', $file, $matches);
 
-            require $this->migration_path . '/' . $file;
+            require $this->getMigrationsPath() . '/' . $file;
 
             $class_name = '\\' . $matches[2][0];
             $a = new $class_name();
