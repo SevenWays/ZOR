@@ -241,7 +241,7 @@ class CreateService extends AbstractService {
     }
 
     public function createDBConnect($driver = null, $database = null, $username = null, $password = null) {
-
+        $this->mkdir($this->dbDir . "migrations");
         if ($driver == null || strtolower($driver) == 'sqlite') {
             $this->createSQLiteDbConnect($database);
         } else {
@@ -257,7 +257,7 @@ class CreateService extends AbstractService {
 
     protected function createSQLiteDbConnect($database) {
         $dataname = (!is_null($database)) ? $database : 'sqlite';
-        $dbFile = $this->getAppRootDir() . "/data/database/" . $dataname . ".db";
+        $dbFile = $this->dbDir . $dataname . ".db";
         $this->saveContentIntoFile("", $dbFile);
         chmod($dbFile, 0666);
         chgrp($dbFile, "www-data");

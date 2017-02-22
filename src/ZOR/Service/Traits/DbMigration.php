@@ -15,16 +15,13 @@ namespace ZOR\Service\Traits;
  */
 trait DbMigration {
 
-    protected static $migration_path = APP_ROOT_DIR . '/data/database/migrations';
-
-
     function getMigrationsPath() {
-        return self::migration_path;
+        return $this->dbDir . "/migrations";
     }
 
-    function setMigrationsPath($migration_path=self::migration_path) {
+    function setMigrationsPath($migration_path=null) {
         $this->mkdir($migration_path);
-        $this->migration_path = $migration_path;
+        $this->dbDir = $migration_path;
     }
 
     public function generateMigration($name, $columns) {
@@ -39,10 +36,11 @@ trait DbMigration {
             foreach ($array as $value) {
                 $args = explode(':', $value);
 
-                if (!is_null($args[0]))
-                    throw new Exception("Columnname is empty");
+              /*  if (!is_null($args[0])) {
+                    throw new \Exception("Columnname is empty");
+                }*/
 
-                $type_match = (!is_null($args[1])) ? $args[1] : null;
+                $type_match = (!empty($args[1])) ? $args[1] : null;
                 preg_match_all('/(\w+)|{(\S+)}/', $type_match, $match);
 
                 $type = (isset($match[1][0])) ? ucfirst($match[1][0]) : null;
@@ -126,7 +124,7 @@ trait DbMigration {
             $class_name = '\\' . $matches[2][0];
             $a = new $class_name();
             $a->setAdapter($db);
-            $a->setPathToConfigFile($this->getMigrationsPath()."/../migrations.php");
+            $a->setPathToConfigFile($this->dbDir . "migrations.php");
 
 
             if ($type === 'migrate') {
