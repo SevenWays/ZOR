@@ -124,7 +124,7 @@ trait DbMigration {
             $class_name = '\\' . $matches[2][0];
             $a = new $class_name();
             $a->setAdapter($db);
-            $a->setPathToConfigFile($this->dbDir . "migrations.php");
+            $a->setPathToConfigFile($this->dbDir . "/migrations.php");
 
 
             if ($type === 'migrate') {

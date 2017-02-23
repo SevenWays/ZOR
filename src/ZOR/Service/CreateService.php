@@ -241,7 +241,7 @@ class CreateService extends AbstractService {
     }
 
     public function createDBConnect($driver = null, $database = null, $username = null, $password = null) {
-        $this->mkdir($this->dbDir . "migrations");
+        $this->mkdir($this->dbDir . "/migrations");
         if ($driver == null || strtolower($driver) == 'sqlite') {
             $this->createSQLiteDbConnect($database);
         } else {

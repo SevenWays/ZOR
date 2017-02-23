@@ -13,7 +13,7 @@ use Zend\Filter\StaticFilter;
 
 abstract class AbstractService {
     
-    protected $dbDir = APP_ROOT_DIR . '/data/database/';
+    protected $dbDir = APP_ROOT_DIR . '/data/database';
     protected $namespace;
     protected $controllerName;
     protected $moduleName;

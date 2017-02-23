@@ -45,6 +45,9 @@ abstract class Migration {
 
     function setPathToConfigFile($path) {
         $this->migrations = $path;
+        if(!file_exists($path)){
+            touch($path);
+        }
     }
 
     public function setAdapter(Adapter $dbAdapter) {
