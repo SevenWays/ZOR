@@ -257,7 +257,7 @@ class CreateService extends AbstractService {
 
     protected function createSQLiteDbConnect($database) {
         $dataname = (!is_null($database)) ? $database : 'sqlite';
-        $dbFile = $this->dbDir . $dataname . ".db";
+        $dbFile = $this->dbDir ."/". $dataname . ".db";
         $this->saveContentIntoFile("", $dbFile);
         chmod($dbFile, 0666);
         chgrp($dbFile, "www-data");
