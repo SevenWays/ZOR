@@ -157,7 +157,7 @@ abstract class Migration {
             } else {
                 $type = (!empty($arg[0])) ? $arg[0] : 'string';
                 $length = (!empty($arg[1])) ? $arg[1] : null;
-                $nullable = (!empty($arg[2])) ? $arg[2] : false;
+                $nullable = (!empty($arg[2])) ? $arg[2] : true;
                 $default = (!empty($arg[3])) ? $arg[3] : null;
                 $options = (!empty($arg[4])) ? $arg[4] : array();
                 $this->addColumn($column_name, $type, $length, $nullable, $default, $options);
