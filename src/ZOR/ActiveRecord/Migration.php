@@ -32,6 +32,7 @@ use Zend\Filter\StaticFilter;
 
 abstract class Migration {
 
+    public $getGeneratedSql = null;
     private $class = null;
     private $called_method = null;
     private $add_columns = array();
@@ -44,7 +45,7 @@ abstract class Migration {
     private $migrationID = null;
 
     function setPathToConfigFile($path) {
-        $this->migrations = $path;      
+        $this->migrations = $path;
     }
 
     public function setAdapter(Adapter $dbAdapter) {
@@ -106,9 +107,9 @@ abstract class Migration {
             $this->appendDropColumns();
             $this->appendConstraint();
         }
-
-        $this->getAdapter()->query($this->class->getSqlString($this->getAdapter()->getPlatform()), Adapter::QUERY_MODE_EXECUTE);
-        echo $this->class->getSqlString($this->getAdapter()->getPlatform());
+        $sql = $this->class->getSqlString($this->getAdapter()->getPlatform());
+        $this->getAdapter()->query($sql, Adapter::QUERY_MODE_EXECUTE);
+        $this->getGeneratedSql = $sql;
     }
 
     private function setDefaultColumns() {

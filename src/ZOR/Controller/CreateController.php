@@ -170,8 +170,11 @@ class CreateController extends AbstractActionController {
                 case 'sucesse':
                     $color = Color::GREEN;
                     break;
-                default:
+                case 'warning':
                     $color = Color::YELLOW;
+                    break;
+                default:
+                    $color = Color::WHITE;
                     break;
             }
 

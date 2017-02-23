@@ -133,6 +133,7 @@ trait DbMigration {
                 $this->setMessage($a->rollback());
                 $rb = true;
             }
+            $this->setMessage($a->getGeneratedSql, 'warning');
         }
     }
 }
