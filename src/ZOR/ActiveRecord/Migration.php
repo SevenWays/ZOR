@@ -44,10 +44,7 @@ abstract class Migration {
     private $migrationID = null;
 
     function setPathToConfigFile($path) {
-        $this->migrations = $path;
-        if(!file_exists($path)){
-            touch($path);
-        }
+        $this->migrations = $path;      
     }
 
     public function setAdapter(Adapter $dbAdapter) {
@@ -71,7 +68,7 @@ abstract class Migration {
         $this->migrationID = $matches[1][0];
         $this->migrationName = $matches[2][0];
 
-        if (key_exists($this->migrationName, $this->getMigrationsConfig())) {
+        if (!empty($this->getMigrationsConfig()) && key_exists($this->migrationName, $this->getMigrationsConfig())) {
             return true;
         }
         return false;

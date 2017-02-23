@@ -60,7 +60,7 @@ trait DbMigration {
 
         $this->class = $this->generateClass($name, null, 'Migration');
         $this->class->addUse('ZOR\ActiveRecord\Migration');
-        $this->class->addMethod('change', array(), MethodGenerator::FLAG_PUBLIC, $body);
+        $this->class->addMethod('change', array(), null, $body);
 
         $this->executeFileGenerate($this->getMigrationsPath() . '/' . time() . '_' . $name . '.php');
 
