@@ -19,7 +19,7 @@ trait DbMigration {
         return $this->dbDir . "/migrations";
     }
 
-    function setMigrationsPath($migration_path=null) {
+    function setMigrationsPath($migration_path = null) {
         $this->mkdir($migration_path);
         $this->dbDir = $migration_path;
     }
@@ -36,9 +36,9 @@ trait DbMigration {
             foreach ($array as $value) {
                 $args = explode(':', $value);
 
-              /*  if (!is_null($args[0])) {
-                    throw new \Exception("Columnname is empty");
-                }*/
+                /*  if (!is_null($args[0])) {
+                  throw new \Exception("Columnname is empty");
+                  } */
 
                 $type_match = (!empty($args[1])) ? $args[1] : null;
                 preg_match_all('/(\w+)|{(\S+)}/', $type_match, $match);
@@ -129,11 +129,17 @@ trait DbMigration {
 
             if ($type === 'migrate') {
                 $this->setMessage($a->migrate());
+                $this->setMessage($a->getGeneratedSql, 'warning');
             } elseif (!$rb && $a->isMigrated($matches[2][0])) {
                 $this->setMessage($a->rollback());
+                $this->setMessage($a->getGeneratedSql, 'warning');
                 $rb = true;
             }
-            $this->setMessage($a->getGeneratedSql, 'warning');
+            
+            if($a->error){
+                $this->setMessage($a->error, 'error');
+            }
         }
     }
+
 }

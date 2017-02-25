@@ -33,6 +33,7 @@ use Zend\Filter\StaticFilter;
 abstract class Migration {
 
     public $getGeneratedSql = null;
+    public $error = false;
     private $class = null;
     private $called_method = null;
     private $add_columns = array();
@@ -104,7 +105,14 @@ abstract class Migration {
         }
         if ($this->class instanceof AlterTable) {
             $this->appendColumns();
-            $this->appendDropColumns();
+            try {
+               $this->appendDropColumns(); 
+            } catch (\Exception $exc) {
+                $this->error = $exc->getMessage();
+                return;
+            }
+
+            
             $this->appendConstraint();
         }
         $sql = $this->class->getSqlString($this->getAdapter()->getPlatform());
@@ -269,7 +277,10 @@ abstract class Migration {
     }
 
     private function appendDropColumns() {
-        if (is_array($this->drop_columns) && $this->class instanceof AlterTable) {
+        if (!empty($this->drop_columns) && $this->class instanceof AlterTable) {
+            if ($this->getAdapter()->getPlatform() instanceof \Zend\Db\Adapter\Platform\Sqlite) {
+                throw new \Exception("You use Sqlite-Platform, this don't supports 'Drop Column' please see documentation");
+            }
             foreach ($this->drop_columns as $column) {
                 $this->class->dropColumn($column);
             }
