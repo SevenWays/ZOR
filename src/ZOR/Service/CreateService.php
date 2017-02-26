@@ -249,7 +249,7 @@ class CreateService extends AbstractService {
                 'driver' => $driver,
                 'database' => $database,
                 'username' => $username,
-                'password' => $username
+                'password' => $password
             );
             $this->setDBAdapterConfig($config);
         }

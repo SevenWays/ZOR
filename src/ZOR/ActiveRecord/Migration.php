@@ -116,14 +116,13 @@ abstract class Migration {
             $this->appendConstraint();
         }
         $sql = $this->class->getSqlString($this->getAdapter()->getPlatform());
-        var_dump($sql);
         $this->getAdapter()->query($sql, Adapter::QUERY_MODE_EXECUTE);
         $this->getGeneratedSql = $sql;
     }
 
     private function setDefaultColumns() {
         if (!key_exists('id', $this->add_columns)) {
-            $this->addColumn('id', 'integer', null, false, null, array('attribute' => 'unsigned', 'autoincrement' => 'auto_increment'));
+            $this->addColumn('id', 'integer', null, false, null, array('autoincrement' => 'auto_increment'));
             $this->addIndex('primary', 'id');
         }
 

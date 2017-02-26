@@ -131,7 +131,6 @@ class CreateController extends AbstractActionController {
         $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
         switch ($this->request->getParam('what')) {
             case 'server':
-
                 $host = (!empty($this->request->getParam('host'))) ? $this->request->getParam('host') : 'localhost';
                 $port = (!empty($this->request->getParam('port'))) ? $this->request->getParam('port') : '8080';
                 $path = (!empty($this->request->getParam('path'))) ? $this->request->getParam('path') : APP_ROOT_DIR . '/public';
