@@ -106,16 +106,17 @@ abstract class Migration {
         if ($this->class instanceof AlterTable) {
             $this->appendColumns();
             try {
-               $this->appendDropColumns(); 
+                $this->appendDropColumns();
             } catch (\Exception $exc) {
                 $this->error = $exc->getMessage();
                 return;
             }
 
-            
+
             $this->appendConstraint();
         }
         $sql = $this->class->getSqlString($this->getAdapter()->getPlatform());
+        var_dump($sql);
         $this->getAdapter()->query($sql, Adapter::QUERY_MODE_EXECUTE);
         $this->getGeneratedSql = $sql;
     }
@@ -253,6 +254,10 @@ abstract class Migration {
             case 'text':
                 $column = new Text($name, $length, $nullable, $default, $options);
                 break;
+            case 'references':
+                $column = new Integer($name . '_id', $nullable, $default, $options);
+                $this->addIndex('foreign', $name . '_id', $name . '_id', $name, 'id');
+                break;
             default:
                 throw new \Exception('Invalide Type of Column');
         }
@@ -279,7 +284,7 @@ abstract class Migration {
     private function appendDropColumns() {
         if (!empty($this->drop_columns) && $this->class instanceof AlterTable) {
             if ($this->getAdapter()->getPlatform() instanceof \Zend\Db\Adapter\Platform\Sqlite) {
-                throw new \Exception("You use Sqlite-Platform, this don't supports 'Drop Column' please see documentation");
+                throw new \Exception("You use Sqlite-Platform, this doesn't support dropping columns please see documentation");
             }
             foreach ($this->drop_columns as $column) {
                 $this->class->dropColumn($column);

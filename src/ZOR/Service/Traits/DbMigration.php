@@ -129,13 +129,11 @@ trait DbMigration {
 
             if ($type === 'migrate') {
                 $this->setMessage($a->migrate());
-                $this->setMessage($a->getGeneratedSql, 'warning');
             } elseif (!$rb && $a->isMigrated($matches[2][0])) {
-                $this->setMessage($a->rollback());
-                $this->setMessage($a->getGeneratedSql, 'warning');
+                $this->setMessage($a->rollback());               
                 $rb = true;
             }
-            
+            $this->setMessage($a->getGeneratedSql, 'warning');
             if($a->error){
                 $this->setMessage($a->error, 'error');
             }
