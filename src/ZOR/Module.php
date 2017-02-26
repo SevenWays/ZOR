@@ -66,25 +66,42 @@ class Module implements ConsoleUsageProviderInterface, AutoloaderProviderInterfa
     public function getConsoleUsage(Console $console) {
         return array(
             'create project [--path=]' => 'Create an application',
-            array('[--path]', 'if workspace differently'),
-            'create module --name= [--path=]' => 'Create a Module',
+            array('[--path]', 'Optional if workspace differently'),
+            'create module --name= [--path=]' => 'Create a module',
             array('[--name]', 'Name of Module'),
-            array('[--path]', 'if workspace differently'),
-            'create fmodule --link= [--path=]' => 'Create a foreign module from GitHub zip link',
+            array('[--path]', 'Optional if workspace differently'),
+            'create fmodule --require= [--path=]' => 'Create a foreign module from packagist.org',
             array('[--require]', 'Package name from packagist.org'),
-            array('[--path]', 'if workspace differently'),
-            'generate ctrl --name= [--module=] [--actions=]' => 'Generate a Controller',
-            array('[--name]', 'Name of Controller'),
-            array('[--module]', 'Name of Module. Default:"Application"'),
-            array('[--actions]', 'Names of Actions. Default: "index"'),
-            'generate act [--ctrl=] [--module=] [--actions=]' => 'Generate the Actions for a Controller',
-            array('[--cname]', 'Name of Controller'),
-            array('[--module]', 'Name of Module. Default:"Application"'),
-            'generate model [--name=] [--module=] [--columns=]' => 'Generate a Model with ActiveRecords',
-            array('[--name]', 'Name of Model'),
-            array('[--module]', 'Name of Module. Default:"Application"'),
+            array('[--path]', 'Optional if workspace differently'),
+             'create database [--name=] [--driver=] [--username=] [--password=]' => 'Create a database adapter',
+            array('[--name]', 'Name of tabel'),
+            array('[--driver]', 'Zend Farmework supports driver'),
+            array('[--username]', 'Database username'),
+            array('[--password]', 'Database password'),
+            'generate ctrl --name= [--module=] [--actions=]' => 'Generate a controller',
+            array('[--name]', 'Name of controller'),
+            array('[--module]', 'Name of module. Default: "Application"'),
+            array('[--actions]', 'Names of actions. Default: "index"'),
+            'generate act [--ctrl=] [--module=] [--actions=]' => 'Generate the actions for a controller',
+            array('[--cname]', 'Name of controller'),
+            array('[--module]', 'Name of module. Default:"Application"'),
+            'generate model [--name=] [--module=] [--columns=]' => 'Generate a model with ActiveRecord pattern',
+            array('[--name]', 'Name of model'),
+            array('[--module]', 'Name of module. Default:"Application"'),
             array('[--columns]', 'A string of attributs'),
-        );
+            'generate migration [--name=] [--columns=]' => 'Generate a migration',
+            array('[--name]', 'Name of migration'),
+            array('[--columns]', 'A string of attributs'),
+            
+            'run server [--host=] [--port=] [--path=]' => 'Run buildin PHP server',
+            array('[--host]', 'Name of migration. Default: "localhost"'),
+            array('[--port]', 'Port nummber. Default: "8080"'),
+            array('[--path]', 'Path to index.php. Default: "/public"'),
+            
+            'db migrate' => 'Run migration to database',
+            'db rollback' => 'Run rollback to database'
+
+            );
     }
 
 }
