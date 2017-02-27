@@ -153,6 +153,7 @@ class GenerateService extends AbstractService {
 
         $module_config = $this->loadModuleConfig();
         if (!empty($module_config)) {
+            $module_config['service_manager']['invokables'][$namespaceName . '\\' . $modelName] = $namespaceName . '\\' . $modelName;
             $module_config['service_manager']['shared'][$namespaceName . '\\' . $modelName] = false;
             $this->saveModuleConfig($module_config);
         }
