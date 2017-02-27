@@ -19,13 +19,15 @@ trait Filter {
      * array('field_name' => array('FilterName' => array('param1' => true)));
      * @var array
      */
-        protected $filters = array();
+    protected $filters = array();
 
     protected function filterIt($field, $value) {
         if (key_exists($field, $this->filters)) {
             foreach ($this->filters[$field] as $name => $args) {
                 return $this->filter($value, $name, $args);
             }
+        } else {
+            return $value;
         }
     }
 
