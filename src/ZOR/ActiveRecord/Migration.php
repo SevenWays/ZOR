@@ -122,7 +122,7 @@ abstract class Migration {
 
     private function setDefaultColumns() {
         if (!key_exists('id', $this->add_columns)) {
-            $this->addColumn('id', 'integer', null, false, null, array('autoincrement' => 'auto_increment'));
+            $this->addColumn('id', 'integer', null, false, null, array('auto_increment' => true));
             $this->addIndex('primary', 'id');
         }
 
