@@ -39,6 +39,8 @@ trait Validation {
                     }
                 }
             }
+        } else {
+            return true;
         }
     }
 
