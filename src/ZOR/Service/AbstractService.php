@@ -12,7 +12,7 @@ use Zend\Code\Generator\ValueGenerator;
 use Zend\Filter\StaticFilter;
 
 abstract class AbstractService {
-    
+
     protected $dbDir = APP_ROOT_DIR . '/data/database';
     protected $namespace;
     protected $controllerName;
@@ -56,7 +56,7 @@ abstract class AbstractService {
     }
 
     public function saveContentIntoFile($content, $path, $mode = 0777) {
-        $this->mkdir(dirname($path),$mode);
+        $this->mkdir(dirname($path), $mode);
 
         if (file_put_contents($path, $content) !== FALSE) {
             $this->setMessage('The file ' . $path . ' was created', 'info');
@@ -72,13 +72,17 @@ abstract class AbstractService {
     }
 
     protected function underscoreToCamelCase($string) {
-        return StaticFilter::execute(strtolower($string), 'WordUnderscoreToCamelCase');
+        return StaticFilter::execute($string, 'WordUnderscoreToCamelCase');
+    }
+
+    protected function camelCaseToUnderscore($string) {
+        return strtolower(StaticFilter::execute($string, 'WordCamelCaseToUnderscore'));
     }
 
     protected function camelCaseToDash($string) {
         return strtolower(StaticFilter::execute($string, 'WordCamelCaseToDash'));
     }
-    
+
     protected function dashToCamelCase($string) {
         return StaticFilter::execute($string, 'WordDashToCamelCase');
     }
