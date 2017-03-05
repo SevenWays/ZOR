@@ -74,7 +74,7 @@ trait DbMigration {
             $func = strtolower($param[1]);
         }
         if ($param[1] == 'Create') {
-            $body = '$this->createTable("' . $param[2] . '");';
+            $body = '$this->createTable("' . $this->camelCaseToUnderscore($param[2]) . '");';
             $func = 'add';
         }
 

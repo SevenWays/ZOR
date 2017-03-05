@@ -112,7 +112,6 @@ abstract class Migration {
                 return;
             }
 
-
             $this->appendConstraint();
         }
         $sql = $this->class->getSqlString($this->getAdapter()->getPlatform());
@@ -188,12 +187,10 @@ abstract class Migration {
                     $this->constraints[] = new PrimaryKey($columns, $name);
                     break;
                 case 'unique':
-                    $this->constraints[] = new UniqueKey($columns, $name);
-
+                    $this->constraints[] = new UniqueKey($columns, $name . '_unique_index');
                     break;
                 case 'foreign':
-                    $this->constraints[] = new ForeignKey($name, $columns, $referenceTable, $referenceColumn, $onDeleteRule, $onUpdateRule);
-
+                    $this->constraints[] = new ForeignKey($name . '_foreign_index', $columns, $referenceTable, $referenceColumn, $onDeleteRule, $onUpdateRule);
                     break;
                 default:
                     new \Exception('Wrong Index Type');

@@ -33,7 +33,7 @@ trait Predication {
      * @return Predicate
      */
     public function equalTo($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->equalTo($left, $right, $leftType, $rightType);
+        $this->where()->equalTo($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -49,7 +49,7 @@ trait Predication {
      * @return Predicate
      */
     public function notEqualTo($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->notEqualTo($left, $right, $leftType, $rightType);
+        $this->where()->notEqualTo($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -65,7 +65,7 @@ trait Predication {
      * @return Predicate
      */
     public function lessThan($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->lessThan($left, $right, $leftType, $rightType);
+        $this->where()->lessThan($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -81,7 +81,7 @@ trait Predication {
      * @return Predicate
      */
     public function greaterThan($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->greaterThan($left, $right, $leftType, $rightType);
+        $this->where()->greaterThan($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -97,7 +97,7 @@ trait Predication {
      * @return Predicate
      */
     public function lessThanOrEqualTo($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->lessThanOrEqualTo($left, $right, $leftType, $rightType);
+        $this->where()->lessThanOrEqualTo($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -113,7 +113,7 @@ trait Predication {
      * @return Predicate
      */
     public function greaterThanOrEqualTo($left, $right, $leftType = 'identifier', $rightType = 'value') {
-        $this->predicate->greaterThanOrEqualTo($left, $right, $leftType, $rightType);
+        $this->where()->greaterThanOrEqualTo($left, $right, $leftType, $rightType);
         return $this;
     }
 
@@ -127,7 +127,7 @@ trait Predication {
      * @return Predicate
      */
     public function like($identifier, $like) {
-        $this->predicate->like($identifier, $like);
+        $this->where()->like($identifier, $like);
         return $this;
     }
 
@@ -141,7 +141,7 @@ trait Predication {
      * @return Predicate
      */
     public function notLike($identifier, $notLike) {
-        $this->predicate->notLike($identifier, $notLike);
+        $this->where()->notLike($identifier, $notLike);
         return $this;
     }
 
@@ -153,7 +153,7 @@ trait Predication {
      * @return $this
      */
     public function expression($expression, $parameters) {
-        $this->predicate->expression($expression, $parameters);
+        $this->where()->expression($expression, $parameters);
         return $this;
     }
 
@@ -166,7 +166,7 @@ trait Predication {
      * @return Predicate
      */
     public function literal($literal) {
-        $this->predicate->literal($literal);
+        $this->where()->literal($literal);
         return $this;
     }
 
@@ -179,7 +179,7 @@ trait Predication {
      * @return Predicate
      */
     public function isNull($identifier) {
-        $this->predicate->isNull($identifier);
+        $this->where()->isNull($identifier);
         return $this;
     }
 
@@ -192,7 +192,7 @@ trait Predication {
      * @return Predicate
      */
     public function isNotNull($identifier) {
-        $this->predicate->isNotNull($identifier);
+        $this->where()->isNotNull($identifier);
         return $this;
     }
 
@@ -206,7 +206,7 @@ trait Predication {
      * @return Predicate
      */
     public function notIn($identifier, $valueSet = null) {
-        $this->predicate->notIn($identifier, $valueSet);
+        $this->where()->notIn($identifier, $valueSet);
         return $this;
     }
 
@@ -220,7 +220,7 @@ trait Predication {
      * @return Predicate
      */
     public function in($identifier, $valueSet = null) {
-        $this->predicate->in($identifier, $valueSet);
+        $this->where()->in($identifier, $valueSet);
         return $this;
     }
 
@@ -235,7 +235,7 @@ trait Predication {
      * @return \Zend\Db\Sql\Predicate\Predicate
      */
     public function between($identifier, $minValue, $maxValue) {
-        $this->predicate->between($identifier, $minValue, $maxValue);
+        $this->where()->between($identifier, $minValue, $maxValue);
         return $this;
     }
 
@@ -246,7 +246,7 @@ trait Predication {
      * @return Predicate
      */
     public function predicate(PredicateInterface $predicate) {
-        $this->predicate->predicate($predicate);
+        $this->where()->predicate($predicate);
         return $this;
     }
 }

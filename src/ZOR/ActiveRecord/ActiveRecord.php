@@ -35,14 +35,19 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * For example:  array('ModelName' => array('class'=>'Application\Model\ModelName', 'through' => 'Item')); //through is using if n:n relationship
      * @var array
      */
-    protected $hasMany = array();
+    protected $has_many = array();
 
     /**
      * Use if contains forange key to parent Table
      * For example: array('ModelName' => array('class'=>'Application\Model\ModelName', 'foreign_key_attribute' => 'model_name_id', 'foreign_key' => null)
      * @var array
      */
-    protected $belongsTo = array();
+    protected $belongs_to = array();
+
+    /**
+     *
+     * @var type 
+     */
     protected $models = array();
 
     /**
@@ -86,16 +91,17 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * SQL date format
      */
     const DATE_FORMAT = 'Y-m-d H:i:s';
-    
-    
+
     /*
      * Included traits
      */
 
-    use Traits\Predication;
-    use Traits\Validation;
-    use Traits\Filter;
-    
+use Traits\Predication;
+
+use Traits\Validation;
+
+use Traits\Filter;
+
     /**
      * 
      * @param \Zend\Db\Adapter\Adapter $adapter
@@ -111,9 +117,10 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
 
     public function initialize() {
         $this->sql = new Sql($this->getDbAdapter(), $this->table);
-        if (is_null($this->predicate)) {
-            $this->predicate = $this->getSelect()->where;
-        }
+
+        /*  if (is_null($this->predicate)) {
+          $this->predicate = new \Zend\Db\Sql\Predicate\Predicate(); //$this->sql->select()->where;//$this->getSelect()->where;
+          } */
         parent::initialize();
     }
 
@@ -190,9 +197,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return array
      */
     public function all() {
-        $this->execute();
-
-        return $this->_result;
+        return $this->execute();
     }
 
     /**
@@ -207,27 +212,17 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     /**
      * Where with Lazy Loading pattern
      * @param mix $params
-     * @return \Zend\Db\Sql\Select
+     * @return \Zend\Db\Sql\Where
      */
-    public function where($predicate = array()) {
-
-        $this->getSelect()->where($predicate);
-        return $this->getSelect();
+    public function where($predicate = NULL) {
+        if ($this->executed) {
+            $this->executed = false;
+        }
+        if (!is_null($predicate)) {
+            $this->getSelect()->where($predicate);
+        }
+        return $this->getSelect()->where;
     }
-
-    /**
-     * Add order to query
-     * @param type $order
-     * @return \ZOR\ActiveRecord\ActiveRecord
-     */
-    /* public function order($order) {
-      if (is_array($order)) {
-      $this->order = $order;
-      } elseif (is_string($order)) {
-      $this->order = array($order);
-      }
-      return $this;
-      } */
 
     /**
      * Find by primary key
@@ -238,9 +233,9 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     public function find($id) {
 
         if (is_array($id)) {
-            $this->in($this->primaryKeyColumn[0], $id);
+            $this->where()->in($this->primaryKeyColumn[0], $id);
         } else {
-            $this->equalTo($this->primaryKeyColumn[0], $id);
+            $this->where()->equalTo($this->primaryKeyColumn[0], $id);
         }
         return $this->execute();
     }
@@ -295,12 +290,15 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      */
     protected function executeStatement() {
         $statement = $this->sql->prepareStatementForSqlObject($this->getSelect());
-        return $statement->execute();
+        $result = $statement->execute();
+        $result->buffer();
+        var_dump($this->getSelect()->getSqlString());
+        return $result;
     }
 
     protected function createStatement() {
-        if (!empty($this->belongsTo)) {
-            foreach ($this->belongsTo as $value) {
+        if (!empty($this->belongs_to)) {
+            foreach ($this->belongs_to as $value) {
                 if (!empty($value['foreign_key'])) {
                     $this->getSelect()->where(array($value['foreign_key_attribute'] => $value['foreign_key']));
                 }
@@ -310,7 +308,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         $result = $this->executeStatement();
         $this->affectedRows = $result->count();
         if ($this->affectedRows == 0) {
-            return null;
+            throw new \Exception('Row not found');
         }
         $this->executed = true;
 
@@ -347,14 +345,18 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord|Array
      */
     public function execute() {
-        if (!$this->executed) {
-            return $this->createStatement();
+        $this->createStatement();
+        if (!empty($this->_result)) {
+            return $this->_result;
+        } else {
+            return $this;
         }
-        return $this;
     }
 
     public function __get($name) {
-        $this->execute();
+        if (!$this->executed) {
+            $this->createStatement();
+        }
         return parent::__get($name);
     }
 
@@ -376,7 +378,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         if ($this->affectedRows == 1) {
             $rowData = $result->current();
             $this->populate($rowData, true);
-            $this->_result[] = $this;
+            return $this;
         } elseif ($this->affectedRows > 1) {
             $class = get_called_class();
             foreach ($result as $value) {
@@ -404,8 +406,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
             return false;
         }
 
-        if (!empty($this->belongsTo)) {
-            foreach ($this->belongsTo as $key => $value) {
+        if (!empty($this->belongs_to)) {
+            foreach ($this->belongs_to as $key => $value) {
                 if (!empty($value['foreign_key'])) {
                     $this->{$value['foreign_key_attribute']} = $value['foreign_key'];
                 }
@@ -415,8 +417,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         if (!empty($this->models)) {
 
             foreach ($this->models as $key => $value) {
-                if (key_exists($key, $this->hasMany) && !empty($this->hasMany[$key]['through'])) {
-                    $this->saveMany($this->hasMany[$key]['through'], $value);
+                if (key_exists($key, $this->has_many) && !empty($this->has_many[$key]['through'])) {
+                    $this->saveMany($this->has_many[$key]['through'], $value);
                 } else {
                     throw new \Exception("Relationship not exist to $key");
                 }
@@ -432,10 +434,10 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     }
 
     protected function saveMany($through, $model) {
-        if (key_exists($through, $this->hasMany)) {
-            $class = new $this->hasMany[$through]['class']($this->getDbAdapter());
-            $class->{$class->belongsTo[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
-            $class->{$class->belongsTo[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
+        if (key_exists($through, $this->has_many)) {
+            $class = new $this->has_many[$through]['class']($this->getDbAdapter());
+            $class->{$class->belongs_to[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
+            $class->{$class->belongs_to[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
             $class->save();
         }
     }
@@ -477,7 +479,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         }
 
         if (preg_match('/(^add_)(.*)/', $func, $result)) {
-            if (!empty($this->hasMany && key_exists($result[2], $this->hasMany))) {
+            if (!empty($this->has_many && key_exists($result[2], $this->has_many))) {
                 return $this->append_model($result[2], $arguments[0]);
             } else {
                 throw new \Exception("Relationship not exist to $result[2]");
@@ -488,17 +490,17 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
             return $this->apply_func($func, $arguments[0]);
         }
 
-        if (!empty($this->hasMany)) {
-            if (key_exists($func, $this->hasMany)) {
-                if (key_exists("through", $this->hasMany[$func])) {
-                    return $this->many_to_many($func, $this->hasMany[$func]['through']);
+        if (!empty($this->has_many)) {
+            if (key_exists($func, $this->has_many)) {
+                if (key_exists("through", $this->has_many[$func])) {
+                    return $this->many_to_many($func, $this->has_many[$func]['through']);
                 } else {
                     return $this->one_to_many($func);
                 }
             }
         }
-        if (!empty($this->belongsTo)) {
-            if (key_exists($func, $this->belongsTo)) {
+        if (!empty($this->belongs_to)) {
+            if (key_exists($func, $this->belongs_to)) {
                 return $this->getBelong($func);
             }
         }
@@ -509,15 +511,15 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     }
 
     protected function getBelong($belongTo) {
-        $class = new $this->belongsTo[$belongTo]['class']($this->getDbAdapter());
-        return $class->find($this->{$this->belongsTo[$belongTo]['foreign_key_attribute']});
+        $class = new $this->belongs_to[$belongTo]['class']($this->getDbAdapter());
+        return $class->find($this->{$this->belongs_to[$belongTo]['foreign_key_attribute']});
     }
 
     protected function many_to_many($table, $through) {
         $keys = null;
         $result = $this->one_to_many($through)->all();
         foreach ($result as $value) {
-            $keys[] = $value->{$value->belongsTo[$table]['foreign_key_attribute']};
+            $keys[] = $value->{$value->belongs_to[$table]['foreign_key_attribute']};
         }
         $class = $this->one_to_many($table);
         $class->in($class->primaryKeyColumn[0], $keys);
@@ -530,10 +532,10 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return type
      */
     protected function one_to_many($table) {
-        $class = new $this->hasMany[$table]['class']($this->getDbAdapter());
-        if (!empty($class->belongsTo)) {
+        $class = new $this->has_many[$table]['class']($this->getDbAdapter());
+        if (!empty($class->belongs_to)) {
             $classname = @end(explode("\\", get_called_class()));
-            $class->belongsTo[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
+            $class->belongs_to[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
         }
         return $class;
     }
@@ -542,8 +544,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * Delete a row with Relationship by foreinge key
      */
     public function destroy() {
-        if (!empty($this->hasMany)) {
-            foreach ($this->hasMany as $key => $value) {
+        if (!empty($this->has_many)) {
+            foreach ($this->has_many as $key => $value) {
                 $class = $this->one_to_many($key);
                 $result = $class->all();
                 if (!empty($result)) {
@@ -560,7 +562,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
 
         $this->delete();
     }
-    
+
     public function getMessages() {
         return $this->messages;
     }
