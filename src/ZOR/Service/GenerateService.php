@@ -147,7 +147,7 @@ class GenerateService extends AbstractService {
         $this->class = $this->generateClass($modelName, $namespaceName, 'ActiveRecord');
         $this->class->addUse('ZOR\ActiveRecord\ActiveRecord');
         $this->class->addProperty('primaryKeyColumn', 'id')
-                ->addProperty('table', $modelName);
+                ->addProperty('table', $this->camelCaseToUnderscore($modelName));
 
         $this->executeFileGenerate($modelPath);
 
