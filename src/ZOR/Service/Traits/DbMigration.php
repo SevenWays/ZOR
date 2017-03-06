@@ -70,7 +70,7 @@ trait DbMigration {
     private function makeMethodBody($param, $attributes) {
 
         if ($param[1] == 'Add' || $param[1] == 'Drop') {
-            $body = '$this->alterTable("' . $param[4] . '");';
+            $body = '$this->alterTable("' . $this->camelCaseToUnderscore($param[4]) . '");';
             $func = strtolower($param[1]);
         }
         if ($param[1] == 'Create') {
