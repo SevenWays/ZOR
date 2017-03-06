@@ -308,7 +308,7 @@ use Traits\Filter;
         $result = $this->executeStatement();
         $this->affectedRows = $result->count();
         if ($this->affectedRows == 0) {
-            throw new \Exception('Row not found');
+            return null;
         }
         $this->executed = true;
 

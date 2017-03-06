@@ -9,7 +9,7 @@ namespace ZOR\ActiveRecord;
  */
 use Zend\Db\Sql\Ddl\Column\ColumnInterface;
 use Zend\Db\Adapter\Adapter;
-use ZOR\Db\Sql\Ddl\Column\Integer;
+use Zend\Db\Sql\Ddl\Column\Integer;
 use Zend\Db\Sql\Ddl\Column\BigInteger;
 use Zend\Db\Sql\Ddl\Column\Blob;
 use Zend\Db\Sql\Ddl\Column\Varchar;
@@ -41,6 +41,7 @@ abstract class Migration {
     private $constraints = array();
     private $methods = array('change', 'up', 'down');
     private $dbAdapter = null;
+    private $table_name = null;
     protected $migrations = __DIR__ . "/migrations.php";
     private $migrationName = null;
     private $migrationID = null;
@@ -145,16 +146,19 @@ abstract class Migration {
 
     public function __call($name, $arg) {
 
+        if ($name == 'createTable' || $name == 'alterTable' || $name == 'dropTable') {
+            $this->table_name = $arg[0];
+        }
         if ($name == 'createTable') {
             if ($this->called_method == 'rollback') {
-                $this->class = new DropTable($arg[0]);
+                $this->class = new DropTable($this->table_name);
             } else {
-                $this->class = new CreateTable($arg[0]);
+                $this->class = new CreateTable($this->table_name);
             }
         }
 
         if ($name == 'alterTable') {
-            $this->class = new AlterTable($arg[0]);
+            $this->class = new AlterTable($this->table_name);
         }
 
         if (preg_match('/(^add_)(.*)/', $name, $result)) {
@@ -187,10 +191,10 @@ abstract class Migration {
                     $this->constraints[] = new PrimaryKey($columns, $name);
                     break;
                 case 'unique':
-                    $this->constraints[] = new UniqueKey($columns, $name . '_unique_index');
+                    $this->constraints[] = new UniqueKey($columns, $name . '_unique_index_' . $this->table_name);
                     break;
                 case 'foreign':
-                    $this->constraints[] = new ForeignKey($name . '_foreign_index', $columns, $referenceTable, $referenceColumn, $onDeleteRule, $onUpdateRule);
+                    $this->constraints[] = new ForeignKey($name . '_foreign_index_' . $this->table_name, $columns, $referenceTable, $referenceColumn, $onDeleteRule, $onUpdateRule);
                     break;
                 default:
                     new \Exception('Wrong Index Type');
