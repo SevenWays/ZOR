@@ -34,14 +34,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * @link http://seven-ways.net
- * @version 0.0.1 from 26.04.2016
+ * @version 0.0.6 from 6.3.2017
  */
 
 namespace ZOR\Service;
 
 class CreateService extends AbstractService {
 
-    const APPLICATION_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonApplication/archive/release-2.5.0.zip';
     const MODULE_SKELETON_URL = 'https://github.com/zendframework/ZendSkeletonModule/archive/2.0.0.zip';
 
     protected $_filename = "application.zip";
@@ -53,6 +52,11 @@ class CreateService extends AbstractService {
         }
     }
 
+    /**
+     * Create application
+     * @param string $filepath Installation path optional
+     * @return boolean
+     */
     public function createApplication($filepath) {
 
         $this->setAppRootDir($filepath);
@@ -70,8 +74,15 @@ class CreateService extends AbstractService {
         $this->includeModule('ZOR');
         $this->createDBConnect();
         $this->setMessage("Create Application is completed");
+        return TRUE;
     }
 
+    /**
+     * Create new module
+     * @param string $name
+     * @param string $filepath
+     * @return boolean
+     */
     public function createModule($name, $filepath) {
         $this->normalizeNames($name);
         $this->setAppRootDir($filepath);
@@ -86,8 +97,15 @@ class CreateService extends AbstractService {
         $this->create(self::MODULE_SKELETON_URL, $this->getAppRootDir() . "/module/" . $this->moduleName);
         $this->includeModule($this->moduleName);
         $this->setMessage("Create module " . $this->moduleName . " is completed");
+        return TRUE;
     }
 
+    /**
+     * Create a foreign module from composer
+     * @param string $require
+     * @param string $filepath
+     * @return boolean
+     */
     public function createForeignModule($require, $filepath = null) {
 
         $this->setAppRootDir($filepath);
@@ -115,6 +133,11 @@ class CreateService extends AbstractService {
         }
     }
 
+    /**
+     * Check if modult name exist
+     * @param string $name
+     * @return boolean
+     */
     protected function moduleExist($name) {
         if (file_exists($this->getAppRootDir() . "/module/" . $name)) {
             return TRUE;
@@ -123,7 +146,7 @@ class CreateService extends AbstractService {
     }
 
     /**
-     * From ZFTool
+     * Copied From ZFTool
      * @param string $path
      */
     protected function installPhar($path) {
@@ -146,6 +169,11 @@ class CreateService extends AbstractService {
         return true;
     }
 
+    /**
+     * Extract file from zip
+     * @return boolean
+     * @throws \Exception
+     */
     protected function extractFile() {
         $zip = new \ZipArchive();
         if ($zip->open($this->getTempDir() . "/" . $this->_filename)) {
@@ -161,6 +189,11 @@ class CreateService extends AbstractService {
         }
     }
 
+    /**
+     * Recursive copy of files
+     * @param string $src
+     * @param string $dst
+     */
     protected function recurse_copy($src, $dst) {
         $dir = opendir($src);
         @mkdir($dst);
@@ -210,6 +243,7 @@ class CreateService extends AbstractService {
         $content = str_replace('module-specific-root', $this->camelCaseToDash($this->moduleName), $content);
         $content = str_replace('Skeleton', 'Index', $content);
         $content = str_replace('SkeletonController', 'IndexController', $content);
+        $content = str_replace('use Zend\Mvc\Controller\AbstractActionController;', 'use ZOR\Controller\AbstractActionController;', $content);
         file_put_contents($dst, $content);
     }
 
@@ -227,6 +261,10 @@ class CreateService extends AbstractService {
         return sys_get_temp_dir();
     }
 
+    /**
+     * Include module to application config
+     * @param name $name
+     */
     public function includeModule($name) {
         if (file_exists($this->getAppRootDir() . "/config/application.config.php")) {
             $application_config = require $this->getAppRootDir() . "/config/application.config.php";
@@ -240,6 +278,13 @@ class CreateService extends AbstractService {
         }
     }
 
+    /**
+     * Minimum settings for database connect. Default: it will do creates sqlite database
+     * @param string $driver    //see zend supported drivers 
+     * @param string $database  //name of database
+     * @param string $username  
+     * @param string $password
+     */
     public function createDBConnect($driver = null, $database = null, $username = null, $password = null) {
         $this->mkdir($this->dbDir . "/migrations");
         if ($driver == null || strtolower($driver) == 'sqlite') {
@@ -257,9 +302,9 @@ class CreateService extends AbstractService {
 
     protected function createSQLiteDbConnect($database) {
         $dataname = (!is_null($database)) ? $database : 'sqlite';
-        $dbFile = $this->dbDir ."/". $dataname . ".db";
+        $dbFile = $this->dbDir . "/" . $dataname . ".db";
         $this->saveContentIntoFile("", $dbFile);
-        chmod($dbFile, 0666);
+        chmod($dbFile, 0775);
         chgrp($dbFile, "www-data");
         chgrp(dirname($dbFile), "www-data");
 
