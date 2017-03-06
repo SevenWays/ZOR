@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Zend Framework (http://framework.zend.com/)
  *
@@ -11,28 +12,28 @@ namespace ZOR\Db\Sql\Ddl\Column;
 
 use Zend\Db\Sql\Ddl\Column\Column;
 
-class Integer extends Column
-{
+class Integer extends Column {
+
     /**
      * @return array
      */
-    public function getExpressionData()
-    {
-        $data    = parent::getExpressionData();
+    public function getExpressionData() {
+        $data = parent::getExpressionData();
         $options = $this->getOptions();
 
         if (isset($options['length'])) {
             $data[0][1][1] .= '(' . $options['length'] . ')';
         }
-        
+
         if (isset($options['attribute'])) {
             $data[0][1][1] .= ' ' . $options['attribute'];
         }
-        
-       if (isset($options['autoincrement'])) {
-            $data[0][1][1] .= ' '.$options['autoincrement'];
+
+        if (isset($options['auto_increment'])) {
+            $data[0][1][1] .= ' ' . $options['auto_increment'];
         }
 
         return $data;
     }
+
 }

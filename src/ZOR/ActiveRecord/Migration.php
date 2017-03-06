@@ -9,7 +9,7 @@ namespace ZOR\ActiveRecord;
  */
 use Zend\Db\Sql\Ddl\Column\ColumnInterface;
 use Zend\Db\Adapter\Adapter;
-use Zend\Db\Sql\Ddl\Column\Integer;
+use ZOR\Db\Sql\Ddl\Column\Integer;
 use Zend\Db\Sql\Ddl\Column\BigInteger;
 use Zend\Db\Sql\Ddl\Column\Blob;
 use Zend\Db\Sql\Ddl\Column\Varchar;
@@ -122,7 +122,7 @@ abstract class Migration {
 
     private function setDefaultColumns() {
         if (!key_exists('id', $this->add_columns)) {
-            $this->addColumn('id', 'integer', null, false, null, array('auto_increment' => true));
+            $this->addColumn('id', 'integer', null, false, null, $this->setAutoIncrement());
             $this->addIndex('primary', 'id');
         }
 
@@ -131,6 +131,15 @@ abstract class Migration {
         }
         if (!key_exists("updated_at", $this->add_columns)) {
             $this->addColumn("updated_at", 'timestamp');
+        }
+    }
+
+    private function setAutoIncrement() {
+        if ($this->getAdapter()->getPlatform() instanceof \Zend\Db\Adapter\Platform\Mysql) {
+            return array('auto_increment' => 'AUTO_INCREMENT');
+        }
+        else{
+            return NULL;
         }
     }
 
