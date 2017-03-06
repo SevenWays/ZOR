@@ -139,7 +139,7 @@ abstract class Migration {
             return array('auto_increment' => 'AUTO_INCREMENT');
         }
         else{
-            return NULL;
+            return array();
         }
     }
 
