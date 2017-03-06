@@ -292,7 +292,6 @@ use Traits\Filter;
         $statement = $this->sql->prepareStatementForSqlObject($this->getSelect());
         $result = $statement->execute();
         $result->buffer();
-        var_dump($this->getSelect()->getSqlString());
         return $result;
     }
 
@@ -418,7 +417,7 @@ use Traits\Filter;
 
             foreach ($this->models as $key => $value) {
                 if (key_exists($key, $this->has_many) && !empty($this->has_many[$key]['through'])) {
-                    $this->saveMany($this->has_many[$key]['through'], $value);
+                    $this->saveMany($this->has_many[$key]['through'], $value['model'], $value['params']);
                 } else {
                     throw new \Exception("Relationship not exist to $key");
                 }
@@ -433,11 +432,12 @@ use Traits\Filter;
         return $this;
     }
 
-    protected function saveMany($through, $model) {
+    protected function saveMany($through, $model, $params = array()) {
         if (key_exists($through, $this->has_many)) {
             $class = new $this->has_many[$through]['class']($this->getDbAdapter());
-            $class->{$class->belongs_to[get_class($this)]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
-            $class->{$class->belongs_to[get_class($model)]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
+            $class->{$class->belongs_to[$this->table]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
+            $class->{$class->belongs_to[$model->table]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
+            $class->build($params);
             $class->save();
         }
     }
@@ -480,7 +480,8 @@ use Traits\Filter;
 
         if (preg_match('/(^add_)(.*)/', $func, $result)) {
             if (!empty($this->has_many && key_exists($result[2], $this->has_many))) {
-                return $this->append_model($result[2], $arguments[0]);
+                $params = (!empty($arguments[1])) ? $arguments[1] : array();
+                return $this->append_model($result[2], $arguments[0], $params);
             } else {
                 throw new \Exception("Relationship not exist to $result[2]");
             }
@@ -504,10 +505,13 @@ use Traits\Filter;
                 return $this->getBelong($func);
             }
         }
+
+        throw new \Exception("Undifined method $func");
     }
 
-    protected function append_model($model_name, $model) {
-        $this->models[$model_name] = $model;
+    protected function append_model($model_name, $model, $params = null) {
+        $this->models[$model_name]['model'] = $model;
+        $this->models[$model_name]['params'] = $params;
     }
 
     protected function getBelong($belongTo) {
@@ -534,7 +538,7 @@ use Traits\Filter;
     protected function one_to_many($table) {
         $class = new $this->has_many[$table]['class']($this->getDbAdapter());
         if (!empty($class->belongs_to)) {
-            $classname = @end(explode("\\", get_called_class()));
+            $classname = $this->table;
             $class->belongs_to[$classname]['foreign_key'] = $this->{$this->primaryKeyColumn[0]};
         }
         return $class;
