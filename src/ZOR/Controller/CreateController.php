@@ -67,11 +67,11 @@ class CreateController extends AbstractActionController {
                 $service->createModule($this->request->getParam('name'), $filepath);
                 break;
             case 'fmodule':
-                if (empty($this->request->getParam('link'))) {
-                    $this->showAlert(array('error' => array('Module Git link is empty')));
+                if (empty($this->request->getParam('require'))) {
+                    $this->showAlert(array('error' => array('Require modulename is empty')));
                     return;
                 }
-                $service->createForeignModule($this->request->getParam('link'), $filepath);
+                $service->createForeignModule($this->request->getParam('require'), $filepath);
                 break;
             case 'database':
                 if (empty($this->request->getParam('driver')) || empty($this->request->getParam('name'))) {
