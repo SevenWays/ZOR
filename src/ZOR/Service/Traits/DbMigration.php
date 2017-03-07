@@ -125,7 +125,7 @@ trait DbMigration {
      * @param string $type = migrate|rollback
      * @param  $db
      */
-    public function runMigration($type, $db = null, $version = null) {
+    public function runMigration($type, $db = null, $version = 'any') {
 
         $rb = false;
         $sort = ($type == 'rollback') ? 1 : 0;
@@ -137,7 +137,7 @@ trait DbMigration {
 
             preg_match_all('/(\d+)_(\S+)(.php)/', $file, $matches);
 
-            if (!is_null($version) && $version != $matches[1][0] && $version != 'any')
+            if ($version != $matches[1][0] && $version != 'any')
                 continue;
 
             require $this->getMigrationsPath() . '/' . $file;
