@@ -140,10 +140,10 @@ class CreateController extends AbstractActionController {
                 die(passthru('php -S ' . $host . ':' . $port . ' -t ' . $path));
                 break;
             case 'migrate':
-                $this->_service->runMigration('migrate', $db);
+                $this->_service->runMigration('migrate', $db, $this->request->getParam('version'));
                 break;
             case 'rollback':
-                $this->_service->runMigration('rollback', $db);
+                $this->_service->runMigration('rollback', $db, $this->request->getParam('version'));
                 break;
             default:
                 break;

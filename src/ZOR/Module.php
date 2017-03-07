@@ -99,8 +99,9 @@ class Module implements ConsoleUsageProviderInterface, AutoloaderProviderInterfa
             array('[--port]', 'Port nummber. Default: "8080"'),
             array('[--path]', 'Path to index.php. Default: "/public"'),
             
-            'db migrate' => 'Run migration to database',
-            'db rollback' => 'Run rollback to database'
+            'db migrate [--version]' => 'Run migration to database',
+            'db rollback [--version]' => 'Run rollback to database',
+            array('[--version]', 'Version of migration. Default: any'),
 
             );
     }

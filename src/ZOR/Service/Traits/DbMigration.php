@@ -15,19 +15,33 @@ namespace ZOR\Service\Traits;
  */
 trait DbMigration {
 
+    /**
+     * Return path of migrations
+     * @return string
+     */
     function getMigrationsPath() {
         return $this->dbDir . "/migrations";
     }
 
+    /**
+     * Set path of migrations
+     * @param string $migration_path
+     */
     function setMigrationsPath($migration_path = null) {
         $this->mkdir($migration_path);
         $this->dbDir = $migration_path;
     }
 
+    /**
+     * Autogenerate migration from string
+     * @param string $name
+     * @param string $columns //column_name1[:datatyp][:index],column_name2[:datatyp][:index]
+     * @return boolean
+     */
     public function generateMigration($name, $columns) {
 
         if ($this->hasMigrations($name))
-            return;
+            return false;
 
         $array = explode(',', $columns);
 
@@ -35,10 +49,6 @@ trait DbMigration {
 
             foreach ($array as $value) {
                 $args = explode(':', $value);
-
-                /*  if (!is_null($args[0])) {
-                  throw new \Exception("Columnname is empty");
-                  } */
 
                 $type_match = (!empty($args[1])) ? $args[1] : null;
                 preg_match_all('/(\w+)|{(\S+)}/', $type_match, $match);
@@ -65,8 +75,15 @@ trait DbMigration {
         $this->executeFileGenerate($this->getMigrationsPath() . '/' . time() . '_' . $name . '.php');
 
         $this->setMessage('Migration ' . $name . ' created');
+        return true;
     }
 
+    /**
+     * Make method's body of change methode
+     * @param array $param
+     * @param array $attributes
+     * @return string
+     */
     private function makeMethodBody($param, $attributes) {
 
         if ($param[1] == 'Add' || $param[1] == 'Drop') {
@@ -104,11 +121,12 @@ trait DbMigration {
     }
 
     /**
-     * 
+     * Run or rollback of migration
      * @param string $type = migrate|rollback
      * @param  $db
      */
-    public function runMigration($type, $db = null) {
+    public function runMigration($type, $db = null, $version = null) {
+
         $rb = false;
         $sort = ($type == 'rollback') ? 1 : 0;
         $migrations = scandir($this->getMigrationsPath(), $sort);
@@ -118,6 +136,9 @@ trait DbMigration {
                 continue;
 
             preg_match_all('/(\d+)_(\S+)(.php)/', $file, $matches);
+
+            if (!is_null($version) && $version != $matches[1][0] && $version != 'any')
+                continue;
 
             require $this->getMigrationsPath() . '/' . $file;
 
@@ -130,11 +151,11 @@ trait DbMigration {
             if ($type === 'migrate') {
                 $this->setMessage($a->migrate());
             } elseif (!$rb && $a->isMigrated($matches[2][0])) {
-                $this->setMessage($a->rollback());               
-                $rb = true;
+                $this->setMessage($a->rollback());
+                $rb = ($version == 'any') ? false : true;
             }
             $this->setMessage($a->getGeneratedSql, 'warning');
-            if($a->error){
+            if ($a->error) {
                 $this->setMessage($a->error, 'error');
             }
         }
