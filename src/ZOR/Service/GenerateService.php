@@ -69,7 +69,7 @@ class GenerateService extends AbstractService {
 
         $this->class = $this->generateClass($ctrClassName, $ctrNamespace, 'AbstractActionController');
 
-        $this->class->addUse('Zend\Mvc\Controller\AbstractActionController')
+        $this->class->addUse('ZOR\Controller\AbstractActionController')
                 ->addUse('Zend\View\Model\ViewModel');
 
         $this->generateActions($actions, $module, $name);
@@ -124,7 +124,7 @@ class GenerateService extends AbstractService {
             $fileReflection = new \Zend\Code\Reflection\FileReflection($this->controllerPath, true);
             $classReflection = $fileReflection->getClass($className);
             $this->class = ClassGenerator::fromReflection($classReflection);
-            $this->class->addUse('Zend\Mvc\Controller\AbstractActionController')
+            $this->class->addUse('ZOR\Controller\AbstractActionController')
                     ->addUse('Zend\View\Model\ViewModel')
                     ->setExtendedClass('AbstractActionController');
             return true;
