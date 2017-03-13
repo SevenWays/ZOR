@@ -519,6 +519,12 @@ use Traits\Filter;
         return $class->find($this->{$this->belongs_to[$belongTo]['foreign_key_attribute']});
     }
 
+    /**
+     * 
+     * @param sting $table
+     * @param string $through
+     * @return mixed
+     */
     protected function many_to_many($table, $through) {
         $keys = null;
         $result = $this->one_to_many($through)->all();
@@ -532,8 +538,8 @@ use Traits\Filter;
 
     /**
      * 
-     * @param type $table
-     * @return type
+     * @param string $table
+     * @return mixed
      */
     protected function one_to_many($table) {
         $class = new $this->has_many[$table]['class']($this->getDbAdapter());
