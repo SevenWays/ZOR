@@ -24,7 +24,7 @@ return array(
                 ),
                 'utils' => array(
                     'options' => array(
-                    'route' => '(run|db) (server|migrate|rollback):what [--host=] [--port=] [--path=]',
+                    'route' => '(run|db) (server|migrate|rollback):what [--host=] [--port=] [--path=] [--version=]',
                         'defaults' => array(
                             'controller' => 'ZOR\Controller\Create',
                             'action' => 'utils'
