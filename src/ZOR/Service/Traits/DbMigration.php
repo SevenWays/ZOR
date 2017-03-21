@@ -149,13 +149,18 @@ trait DbMigration {
 
 
             if ($type === 'migrate') {
-                $this->setMessage($a->migrate());
+                $msg = $a->migrate();
             } elseif (!$rb && $a->isMigrated($matches[2][0])) {
-                $this->setMessage($a->rollback());
+                $msg = $a->rollback();
                 $rb = ($version == 'any') ? false : true;
             }
-            $this->setMessage($a->getGeneratedSql, 'warning');
-            if ($a->error) {
+            if (!is_null($msg)) {
+                $this->setMessage($msg);
+            }
+            if (!is_null($a->getGeneratedSql)) {
+                $this->setMessage($a->getGeneratedSql, 'warning');
+            }
+            if ($a->error != FALSE) {
                 $this->setMessage($a->error, 'error');
             }
         }
