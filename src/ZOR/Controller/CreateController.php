@@ -129,6 +129,7 @@ class CreateController extends AbstractActionController {
 
     public function utilsAction() {
         $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
+        $version = (empty($this->request->getParam('version')) : 'any' ? $this->request->getParam('version');
         switch ($this->request->getParam('what')) {
             case 'server':
                 $host = (!empty($this->request->getParam('host'))) ? $this->request->getParam('host') : 'localhost';
@@ -140,10 +141,10 @@ class CreateController extends AbstractActionController {
                 die(passthru('php -S ' . $host . ':' . $port . ' -t ' . $path));
                 break;
             case 'migrate':
-                $this->_service->runMigration('migrate', $db, $this->request->getParam('version'));
+                $this->_service->runMigration('migrate', $db, $version);
                 break;
             case 'rollback':
-                $this->_service->runMigration('rollback', $db, $this->request->getParam('version'));
+                $this->_service->runMigration('rollback', $db, $version);
                 break;
             default:
                 break;
