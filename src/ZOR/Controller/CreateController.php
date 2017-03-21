@@ -42,7 +42,6 @@ namespace ZOR\Controller;
 use Zend\Console\Adapter\AdapterInterface as Console;
 use Zend\Console\Exception\RuntimeException;
 use Zend\Console\ColorInterface as Color;
-use Zend\Db\Adapter\AdapterInterface;
 use ZOR\Service\GenerateService;
 use ZOR\Service\CreateService;
 
@@ -51,11 +50,6 @@ class CreateController extends AbstractActionController {
     protected $_service;
     protected $_console;
     protected $before_action = array('getGeneratorService' => array('generate', 'utils'));
-    protected $db;
-    
-    public function __construct(AdapterInterface $db) {
-        $this->db = $db;
-    }
     
     public function createAction() {
         $service = new CreateService();
@@ -120,8 +114,8 @@ class CreateController extends AbstractActionController {
                 $this->_service->generateActions($actions, $module, $this->request->getParam('cname'));
                 break;
             case 'model':
-                //$dbadapter = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
-                $this->_service->generateModel($this->request->getParam('name'), $module, $this->request->getParam('columns'), $this->db);
+                $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
+                $this->_service->generateModel($this->request->getParam('name'), $module, $this->request->getParam('columns'), $db);
                 break;
             case 'migration':
                 $this->_service->generateMigration($this->request->getParam('name'), $this->request->getParam('columns'));
@@ -134,7 +128,7 @@ class CreateController extends AbstractActionController {
     }
 
     public function utilsAction() {
-       // $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
+        $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
         $version = (empty($this->request->getParam('version'))) ? 'any' : $this->request->getParam('version');
         switch ($this->request->getParam('what')) {
             case 'server':
@@ -147,10 +141,10 @@ class CreateController extends AbstractActionController {
                 die(passthru('php -S ' . $host . ':' . $port . ' -t ' . $path));
                 break;
             case 'migrate':
-                $this->_service->runMigration('migrate', $this->db, $version);
+                $this->_service->runMigration('migrate', $db, $version);
                 break;
             case 'rollback':
-                $this->_service->runMigration('rollback', $this->db, $version);
+                $this->_service->runMigration('rollback', $db, $version);
                 break;
             default:
                 break;
