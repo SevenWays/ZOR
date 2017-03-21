@@ -84,6 +84,8 @@ abstract class Migration {
             $this->execute();
             $this->setAsMigrated();
             return "Migration: $this->migrationName, ID: $this->migrationID migrated!";
+        } else {
+            return null;
         }
     }
 
@@ -94,7 +96,10 @@ abstract class Migration {
             $this->execute();
             $this->setAsRollback();
             return "Migration: $this->migrationName ID: $this->migrationID rollback!";
+        } else {
+            return null;    
         }
+        
     }
 
     private function execute() {
