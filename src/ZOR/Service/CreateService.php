@@ -304,9 +304,9 @@ class CreateService extends AbstractService {
         $dataname = (!is_null($database)) ? $database : 'sqlite';
         $dbFile = $this->dbDir . "/" . $dataname . ".db";
         $this->saveContentIntoFile("", $dbFile);
-        chmod($dbFile, 0775);
-        chgrp($dbFile, "www-data");
-        chgrp(dirname($dbFile), "www-data");
+        chmod($dbFile, 0777);
+        /*chgrp($dbFile, "www-data");
+        chgrp(dirname($dbFile), "www-data");*/
 
         $config = array(
             'driver' => 'Pdo_Sqlite',
