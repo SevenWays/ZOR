@@ -129,7 +129,7 @@ class CreateController extends AbstractActionController {
 
     public function utilsAction() {
         $db = $this->serviceLocator->get("Zend\Db\Adapter\Adapter");
-        $version = (empty($this->request->getParam('version')) ? 'any' : $this->request->getParam('version');
+        $version = (empty($this->request->getParam('version'))) ? 'any' : $this->request->getParam('version');
         switch ($this->request->getParam('what')) {
             case 'server':
                 $host = (!empty($this->request->getParam('host'))) ? $this->request->getParam('host') : 'localhost';
