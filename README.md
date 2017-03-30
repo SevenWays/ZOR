@@ -5,13 +5,13 @@ This Module implements some functions of Ruby On Rails, such as the ActiveRecord
                         ZendOnRails Instruction
 
 Installation required programs.
-
+```
   sudo apt-get install php7.0 php7.0-zip php7.0-intl php7.0-xml php7.0-sqlite
   
   sudo apt-get install composer
   
   sudo apt-get install git
-  
+```  
 
 Installation packages.
 
@@ -32,7 +32,7 @@ or use
 
 
                       Working with ZendOnRails module
-
+```
   zor.php create project [--path=]    Create an application. It uses  ZendApplicatioSkeleton
        
   [--path]    Optional if workspace differently
@@ -94,50 +94,52 @@ or use
   zor.php db rollback [--version]    Run rollback to database
 
   [--version]    Version of migration. Default: any
-
+```
                Working with ActiveRecord
 
 Create database / model. The ZOR generated the model and migration with command:
-
+```
   zor.php generate model [--name =] [--module=] [--columns=]
-
+```
 The attributes id, created_at, and updated_at are generated automatically. There are two ways to create the model:
 
 First method: The generator binds every generated Model in Service Manager. This allows us to create the access from controller with the following call:
-
+```
 $obj = $this->serviceLocator->get('Namespace\Model\ModelName');
-
+```
 Because each ActiveRecord object implements an AdapterAwareInterface, Database Adapter is automatically added by the ServiceManager.
 
 Second method: Via normal object generation, you have to transfer the database adapter to created object.
-
+```
 $obj = new ModelName();
 $obj-> setDbAdapter($adapterObject);
-
+```
 
                 Add and modify records
 
 
 The records can be added in two ways.
-
+```
 $obj->create(array (field_name1 => value, field_name2 => value, ...));
 $obj->bind(array (field_name1 => value, field_name2 => value, ...));
-
-Where bind() method is to execute save() method.
-
+```
+Where `bind()` method is to execute `save()` method.
+```
 $obj->update_attributes(array (field_name1 => 'value', field_name2 => 'value', ...));
 $obj->columnName = 'value';
-
+```
 For the individual changes of the values, one must execute the save() method.
+```
 $obj->save();
-
+```
 Useful methods:
+```
 $obj->isNewRecord();   // Verifies if Model is stored in the database.
 
 $obj->isChanged();     // Returns whether a column value has been changed
-
+```
             Working with individual entries
-
+```
 first($like=1) - returns the first entry from the database
 last($like=1) - returns the last entry from the database
 all() - returns all entries from the database
@@ -146,14 +148,14 @@ find($id) - searches for one or more entries in the database by attributes(Prima
 find_by_attribute($name, $argument) - looks for an entry using the attribute name and value.
 
 find_or_create_by_attribute ($column, $argument, $_) - this function checks if an entry exists, otherwise it inserts new.
-
+```
 With $_ variable you can pass an array with associated attributes and their value.
 
 There are called magical methods:
-
+```
 find_by_* ($value);
 find_or_create_by_* ($value, $_=null);
-
+```
 Instead of the asterisk, set the name of the attribute.
 
             Working with relationship 1:N
@@ -161,16 +163,18 @@ Instead of the asterisk, set the name of the attribute.
 You have to make the settings in both models:
 
 In the Model_1:
+```
 protected $ has_many = array('model_N' => array('class' => 'Namespace\ModelName');
-
+```
 In the Model_N:
+```
 protected $ belongs_to = array('model_1' => array ('class' => 'Namespace\ModelName', 'foreign_key_attribute' => 'model_name_id', 'foreign_key' => null);
 
 $nModel = $ obj->NameOfNModel(); //gets new N-model
 
 $obj->NameOfNModel()->create(array(field_name => value));
 $all_n_mdele = $obj->NameOfNModel()->all(); // returns an array of N-relationship models.
-
+```
             Working with relationship M:N
 
 M:N relationships need one third Tabele, we can create one by means of generator the tabele.
@@ -178,14 +182,15 @@ M:N relationships need one third Tabele, we can create one by means of generator
 Generate model Model_B[--module =] --columns=Model_M:references, Model_N:references
 
 In the Model_B:
-
+```
 protected $ has_many = array('Model_M' => array ('class' => 'Namespace\ModelName_M'),
                              'Model_N' => array('class' => 'Namespace\ModelName_N'));
-
+```
 In the Model_M:
-
+```
 protected $ has_many = array ('Model_N' => array('class' => 'Namespace\ModelName','through' => 'Model_B');
-
+```
 In the Model_N:
-
+```
 protected $ belongs_to = array ('Model_M' => array ('class' => 'namespace\ModelName', 'foreign_key_attribute' => 'model_name_id', 'foreign_key' => null);
+```
