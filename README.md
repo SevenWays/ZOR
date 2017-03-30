@@ -7,8 +7,11 @@ This Module implements some functions of Ruby On Rails, such as the ActiveRecord
 Installation required programs.
 
   sudo apt-get install php7.0 php7.0-zip php7.0-intl php7.0-xml php7.0-sqlite
+  
   sudo apt-get install composer
+  
   sudo apt-get install git
+  
 
 Installation packages.
 
