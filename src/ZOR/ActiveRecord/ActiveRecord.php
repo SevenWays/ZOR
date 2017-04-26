@@ -96,11 +96,11 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * Included traits
      */
 
-use Traits\Predication;
+    use Traits\Predication;
 
-use Traits\Validation;
+    use Traits\Validation;
 
-use Traits\Filter;
+    use Traits\Filter;
 
     /**
      * 
@@ -398,11 +398,12 @@ use Traits\Filter;
 
     /**
      * Save a row to table
-     * @return \ZOR\ActiveRecord\ActiveRecord
+     * @return bool
      */
     public function save() {
+        $status = false;
         if (!$this->isValid()) {
-            return false;
+            return $status;
         }
 
         if (!empty($this->belongs_to)) {
@@ -427,9 +428,21 @@ use Traits\Filter;
         $this->data['created_at'] = (!empty($this->data['created_at'])) ? $this->data['created_at'] : date(self::DATE_FORMAT);
         $this->data['updated_at'] = date(self::DATE_FORMAT);
 
+        if (parent::save() > 0) {
+            $this->_newrecord = false;
+            $status = TRUE;
+        }
+        return $status;
+    }
 
-        $this->_newrecord = (parent::save() > 0) ? false : true;
-        return $this;
+    /**
+     * Update existing row
+     * @param array $params
+     * @return \ZOR\ActiveRecord\ActiveRecord
+     */
+    public function update(array $params) {
+        $this->populate($params, true);
+        return $this->save();
     }
 
     protected function saveMany($through, $model, $params = array()) {
@@ -452,7 +465,7 @@ use Traits\Filter;
     }
 
     /**
-     * Return whether a attribute is changed
+     * Returns whether an attribute is changed
      * @return bool
      */
     public function isChanged() {
