@@ -160,11 +160,11 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     public function build(array $params) {
         $this->populate($params);
     }
-    
+
     public function populate(array $rowData, $rowExistsInDatabase = false) {
         parent::populate(array_merge($this->data, $rowData), $rowExistsInDatabase);
         $this->filterAll();
-        return $this;    
+        return $this;
     }
 
     /**
@@ -312,6 +312,13 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         return $this->result($this->executeStatement());
     }
 
+    /**
+     * Applies SQL aggregate functions return a single value, calculated from values in a column.
+     * @param string $func_name
+     * @param string $attr
+     * @param string $as
+     * @return mixed
+     */
     public function apply_func($func_name, $attr, $as = null) {
         $as_attr = (is_null($as)) ? $func_name : $as;
         $this->getSelect()->columns(array($as_attr => new \Zend\Db\Sql\Expression($func_name . '(' . $attr . ')')));
