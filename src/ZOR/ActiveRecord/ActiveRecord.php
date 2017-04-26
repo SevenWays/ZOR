@@ -147,7 +147,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function create(array $params) {
-        $this->build($params);
+        $this->populate($params);
         $this->save();
         return $this;
     }
@@ -158,9 +158,13 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function build(array $params) {
-        $this->populate(array_merge($this->data, $params));
+        $this->populate($params);
+    }
+    
+    public function populate(array $rowData, $rowExistsInDatabase = false) {
+        parent::populate(array_merge($this->data, $rowData), $rowExistsInDatabase);
         $this->filterAll();
-        return $this;
+        return $this;    
     }
 
     /**
@@ -169,7 +173,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord
      */
     public function update_attributes(array $params) {
-        $this->build($params);
+        $this->populate($params);
         $this->save();
         return $this;
     }
@@ -304,20 +308,13 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
             }
         }
 
-        $result = $this->executeStatement();
-        $this->affectedRows = $result->count();
-        if ($this->affectedRows == 0) {
-            return null;
-        }
         $this->executed = true;
-
-        // make sure data and original data are in sync after save
-        return $this->result($result);
+        return $this->result($this->executeStatement());
     }
 
     public function apply_func($func_name, $attr, $as = null) {
         $as_attr = (is_null($as)) ? $func_name : $as;
-        $sql = $this->getSelect()->columns(array($as_attr => new \Zend\Db\Sql\Expression($func_name . '(' . $attr . ')')));
+        $this->getSelect()->columns(array($as_attr => new \Zend\Db\Sql\Expression($func_name . '(' . $attr . ')')));
         $result = $this->executeStatement();
         $rowData = $result->current();
         return $rowData[$as_attr];
@@ -344,12 +341,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord|Array
      */
     public function execute() {
-        $this->createStatement();
-        if (!empty($this->_result)) {
-            return $this->_result;
-        } else {
-            return $this;
-        }
+        return $this->createStatement();
     }
 
     public function __get($name) {
@@ -373,7 +365,9 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return \ZOR\ActiveRecord\ActiveRecord|\ZOR\ActiveRecord\class
      */
     protected function result($result) {
+        $this->affectedRows = $result->count();
         $array = array();
+
         if ($this->affectedRows == 1) {
             $rowData = $result->current();
             $this->populate($rowData, true);
@@ -425,7 +419,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
             }
         }
 
-        $this->data['created_at'] = (!empty($this->data['created_at'])) ? $this->data['created_at'] : date(self::DATE_FORMAT);
+        $this->data['created_at'] = (!empty($this->created_at)) ? $this->created_at : date(self::DATE_FORMAT);
         $this->data['updated_at'] = date(self::DATE_FORMAT);
 
         if (parent::save() > 0) {
@@ -450,7 +444,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
             $class = new $this->has_many[$through]['class']($this->getDbAdapter());
             $class->{$class->belongs_to[$this->table]['foreign_key_attribute']} = $this->{$this->primaryKeyColumn[0]};
             $class->{$class->belongs_to[$model->table]['foreign_key_attribute']} = $model->{$model->primaryKeyColumn[0]};
-            $class->build($params);
+            $class->populate($params);
             $class->save();
         }
     }
