@@ -156,7 +156,7 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     public function build(array $params) {
         $this->populate($params);
     }
-    
+
     /**
      * Set data from array
      * @param array $rowData
@@ -575,6 +575,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     public function destroy() {
         if (!empty($this->has_many)) {
             foreach ($this->has_many as $key => $value) {
+                if (!empty($value['through']))
+                    continue;
                 $class = $this->one_to_many($key);
                 $result = $class->all();
                 if (!empty($result)) {
