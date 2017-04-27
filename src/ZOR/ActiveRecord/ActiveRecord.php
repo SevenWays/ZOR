@@ -333,11 +333,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
      * @return int
      */
     public function COUNT($attr = '*') {
-        if (!is_null($this->_result)) {
-            if (is_array($this->_result)) {
-                return count($this->_result);
-            }
-            return 1;
+        if (!empty($this->_result)) {
+            return count($this->_result);
         } else {
             return $this->apply_func('COUNT', $attr);
         }
