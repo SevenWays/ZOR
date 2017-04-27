@@ -413,10 +413,11 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         }
 
         if (!empty($this->models)) {
-
             foreach ($this->models as $key => $value) {
                 if (key_exists($key, $this->has_many) && !empty($this->has_many[$key]['through'])) {
-                    $this->saveMany($this->has_many[$key]['through'], $value['model'], $value['params']);
+                    for ($i = 0; $i < count($value); $i++) {
+                        $this->saveMany($this->has_many[$key]['through'], $value['model'][$i], $value['params'][$i]);
+                    }
                 } else {
                     throw new \Exception("Relationship not exist to $key");
                 }
@@ -521,8 +522,8 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     }
 
     protected function append_model($model_name, $model, $params = null) {
-        $this->models[$model_name]['model'] = $model;
-        $this->models[$model_name]['params'] = $params;
+        $this->models[$model_name]['model'][] = $model;
+        $this->models[$model_name]['params'][] = $params;
     }
 
     protected function getBelong($belongTo) {
