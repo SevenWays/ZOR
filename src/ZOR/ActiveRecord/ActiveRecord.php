@@ -117,10 +117,6 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
 
     public function initialize() {
         $this->sql = new Sql($this->getDbAdapter(), $this->table);
-
-        /*  if (is_null($this->predicate)) {
-          $this->predicate = new \Zend\Db\Sql\Predicate\Predicate(); //$this->sql->select()->where;//$this->getSelect()->where;
-          } */
         parent::initialize();
     }
 
@@ -160,7 +156,13 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
     public function build(array $params) {
         $this->populate($params);
     }
-
+    
+    /**
+     * Set data from array
+     * @param array $rowData
+     * @param bool $rowExistsInDatabase
+     * @return $this
+     */
     public function populate(array $rowData, $rowExistsInDatabase = false) {
         parent::populate(array_merge($this->data, $rowData), $rowExistsInDatabase);
         $this->filterAll();
@@ -521,6 +523,12 @@ abstract class ActiveRecord extends AbstractRowGateway implements AdapterAwareIn
         throw new \Exception("Undifined method $func");
     }
 
+    /**
+     * 
+     * @param string $model_name
+     * @param ZOR/ActiveRecord/ActiveRecord $model
+     * @param null|array $params
+     */
     protected function append_model($model_name, $model, $params = null) {
         $this->models[$model_name]['model'][] = $model;
         $this->models[$model_name]['params'][] = $params;
