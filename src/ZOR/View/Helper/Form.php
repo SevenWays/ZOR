@@ -48,9 +48,9 @@ class Form extends ZForm {
             $this->element->setOptions($arg[1]);
         }
 
-        $array = ['Submit'];
-
-        $value = (in_array($name, $array)) ? $arg[0] : static::$model->{$arg[0]};
+        $array = ['Submit', 'Reset'];
+        $valueFromModel = (static::$model->offsetExists($arg[0])) ? static::$model->{$arg[0]} : "";
+        $value = (in_array($name, $array)) ? $arg[0] : $valueFromModel;
 
         $this->element->setValue($value);
         $this->element->setMessages(static::$model->getMessages());
